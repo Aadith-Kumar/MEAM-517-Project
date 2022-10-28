@@ -16,6 +16,6 @@ build instructions:
 
 3. Test the two sample files, one in CPP and one in python with the ros2 run command
 
-     `$ ros2run path_planning cpp_publisher`
-     
-     `$ ros2run path_planning python_subscriber.py`
+     `$ ros 2 run path_planning cpp_publisher`
+      
+     `$ ros 2 run path_planning python_subscriber.py`
