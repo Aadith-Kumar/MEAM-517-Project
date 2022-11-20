@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include <vector>
 
 using namespace std;
 
@@ -6,10 +7,17 @@ using namespace std;
 typedef pair <int, int> xy;
 vector<vector<int>> grid
 {
-    {0,0,0,0},
-    {0,1,1,0},
-    {0,0,0,1}
-};
+    {0,0,0,0,1,0,0,0},
+    {0,1,1,1,1,0,0,0},
+    {0,0,0,1,1,0,0,0},
+    {0,0,0,0,1,0,0,0},
+    {0,0,0,0,1,0,0,0},
+    {0,1,1,0,1,0,0,0},
+    {0,0,0,1,0,0,0,0},
+    {0,0,0,0,0,0,0,0}
+}; 
+// 0 - Free
+// 1 - Occupied
 
 struct waypoint{
     float cost;
@@ -50,15 +58,63 @@ vector<xy> get_neighbors(int x, int y)
     return neighbors;
 }
 
+float get_distance(int x1, int y1, int x2, int y2)
+{
+    return sqrt(
+        pow(x1-x2, 2) + pow(y1-y2, 2)
+    );
+}
+
 vector<xy> astar(xy start, xy goal)
 {
     vector<xy> path;
     priority_queue<waypoint, vector<waypoint>, CompareCost> minheap;
     set<xy> visited;
+    vector<vector<float>> dist(grid.size(), vector<float>(grid[0].size(), INFINITY));
+    vector<vector<xy>> parent(grid.size(), vector<xy>(grid[0].size()));
 
-    waypoint s = {0, start};
+    waypoint s = {0, start, make_pair(-1,-1)};
+    dist[start.first][start.second] = 0;
     minheap.push(s);
-    cout << minheap.top().location.first << ", " << minheap.top().location.second << endl;
+    parent[start.first][start.second] = make_pair(-1, -1);
+    
+    while(!minheap.empty()){
+        waypoint top = minheap.top();
+        // cout << top.location.first << ", " << top.location.second << endl;
+        minheap.pop();
+        // cout << visited.count(top.location) << endl;
+        if(visited.count(top.location)==0){
+            visited.insert(top.location);
+            parent[top.location.first][top.location.second] = top.parent;
+            if(top.location == goal){
+                // GOAL condition
+                xy path_next = top.location;
+                while(path_next != make_pair(-1,-1)){
+                    path.push_back(path_next);
+                    path_next = parent[path_next.first][path_next.second];
+                }
+                reverse(path.begin(), path.end());
+                
+                return path;
+            }
+
+
+            for(auto n : get_neighbors(top.location.first, top.location.second)){
+                if(grid[n.first][n.second]==0){
+                    float f = dist[n.first][n.second];
+                    float g = top.cost + 
+                            get_distance(top.location.first, top.location.second, n.first, n.second) +
+                            get_distance(goal.first, goal.second, n.first, n.second);
+                    
+                    if(g<f){
+                        dist[top.location.first][top.location.second] = g;
+                        waypoint neighbor = {g, n, top.location};
+                        minheap.push(neighbor);
+                    }
+                }
+            }
+        }
+    }
 
     return path;
 }
@@ -73,11 +129,11 @@ int main(int argc, const char** argv)
     goal.first = stoi(argv[3]);
     goal.second = stoi(argv[4]);
 
-    cout << start.first << ", " << start.second << endl;
-    cout << goal.first << ", " << goal.second << endl;
-
-    printf("Func debug\n");
-    astar(start, goal);
+    vector<xy> path = astar(start, goal);
+    cout << "PATH" << endl;
+    for(auto p : path)
+        cout << p.first << ", " << p.second << endl;
+    cout << endl;
 
     return 0;
 }
