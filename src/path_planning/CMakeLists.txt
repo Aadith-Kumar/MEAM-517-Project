@@ -16,10 +16,12 @@ find_package(rclpy REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 add_executable(cpp_publisher scripts/cpp_pub.cpp)
+add_executable(astar scripts/astar.cpp)
 ament_target_dependencies(cpp_publisher rclcpp std_msgs)
 
 install(TARGETS
   cpp_publisher
+  astar
   DESTINATION lib/${PROJECT_NAME})
 
 

@@ -13,6 +13,7 @@ vector<vector<int>> grid
 
 struct waypoint{
     float cost;
+    xy location;
     xy parent;
 };
 
@@ -55,6 +56,10 @@ vector<xy> astar(xy start, xy goal)
     priority_queue<waypoint, vector<waypoint>, CompareCost> minheap;
     set<xy> visited;
 
+    waypoint s = {0, start};
+    minheap.push(s);
+    cout << minheap.top().location.first << ", " << minheap.top().location.second << endl;
+
     return path;
 }
 
@@ -70,6 +75,9 @@ int main(int argc, const char** argv)
 
     cout << start.first << ", " << start.second << endl;
     cout << goal.first << ", " << goal.second << endl;
+
+    printf("Func debug\n");
+    astar(start, goal);
 
     return 0;
 }
