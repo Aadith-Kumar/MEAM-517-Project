@@ -50,50 +50,62 @@ class Robot(object):
   	def continuous_time_full_dynamics(self, x, u):
 		# Dynamics for the quadrotor
 		# TODO: Pranav add dynamics
-		g = self.g
-		m = self.m
-		a = self.a
-		I = self.I
 
 		theta = x[2]
-		ydot = x[3]
-		zdot = x[4]
-		thetadot = x[5]
-		u0 = u[0]
-		u1 = u[1]
+		v = u[0]
+		w = u[1]
 
-		xdot = np.array([ydot,
-						zdot,
-						thetadot,
-						-sin(theta) * (u0 + u1) / m,
-						-g + cos(theta) * (u0 + u1) / m,
-						a * (u0 - u1) / I])
+		xdot = np.array([v*np.cos(theta),
+						v*np.sin(theta),
+						w])
 		return xdot
 
-  	def continuous_time_linearized_dynamics(self):
+"""
+Keep commented for now, will remove later
+  	def continuous_time_linearized_dynamics(self, xr, ur):
 		# TODO: Pranav add dynamics
 		# Dynamics linearized at the fixed point
 		# This function returns A and B matrix
-		A = np.zeros((6,6))
-		A[:3, -3:] = np.identity(3)
-		A[3, 2] = -self.g;
 
-		B = np.zeros((6,2))
-		B[4,0] = 1/self.m;
-		B[4,1] = 1/self.m;
-		B[5,0] = self.a/self.I
-		B[5,1] = -self.a/self.I
+		# theta_r (reference theta)
+		# v _r (reference velocity)
+		# T (sampling period)
+
+		theta_r = xr[2]
+		v_r = ur[0]
+
+		A = np.array([[1, 0, -v_r*np.sin(theta_r)],
+					  [0, 1, v_r*np.cos(theta_r)],
+					  [0, 0, 1]])
+
+		B = np.array([[np.cos(theta_r), 0],
+					  [np.sin(theta_r), 0],
+					  [0, 1]])
 
 		return A, B
 
-  	def discrete_time_linearized_dynamics(self, T):
+"""
+
+  	def discrete_time_linearized_dynamics(self, xr, ur, T):
 		# TODO: Pranav add dynamics
 		# CHECK PAPER
 		# Discrete time version of the linearized dynamics at the fixed point
 		# This function returns A and B matrix of the discrete time dynamics
-		A_c, B_c = self.continuous_time_linearized_dynamics()
-		A_d = np.identity(6) + A_c * T;
-		B_d = B_c * T;
+
+		# A_c, B_c = self.continuous_time_linearized_dynamics()
+		# A_d = np.identity(3) + A_c * T;
+		# B_d = B_c * T;
+
+		v_r = xr[2]
+		theta_r = ur[0]
+
+		A_d = np.array([[1, 0, -v_r*np.sin(theta_r)*T],
+						[0, 1, v_r*np.cos(theta_r)*T],
+						[0, 0, 1]])
+
+		B_d = np.array([[np.cos(theta_r)*T, 0],
+						[np.sin(theta_r)*T, 0],
+						[0, T]])
 
 		return A_d, B_d
 
@@ -103,14 +115,14 @@ class Robot(object):
 	# TODO: MPC 
   ###
   	def add_initial_state_constraint(self, prog, x, x_current):
-		# TODO: impose initial state constraint.
+		# TODO: impose initial state constraint.  
 		# Use AddBoundingBoxConstraint
 		prog.AddBoundingBoxConstraint(x_current, x_current, x[0])
 
   	def add_input_saturation_constraint(self, prog, x, u, N):
 		# TODO: impose input limit constraint.
 		# Use AddBoundingBoxConstraint
-		# The limits are available through self.umin and self.umax
+		# The limits are available through self.umin and self.umax  
 		for ui in u:
 			prog.AddBoundingBoxConstraint(self.umin - self.u_d()[0], self.umax - self.u_d()[0], ui[0])
 			prog.AddBoundingBoxConstraint(self.umin - self.u_d()[0], self.umax - self.u_d()[0], ui[1])
