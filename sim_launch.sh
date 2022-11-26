@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/home/aadith/Desktop/turtlebot3_ws/src/turtlebot3_simulations/turtlebot3_gazebo/models;
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/home/aadith/Desktop/MEAM-517-Project/src/turtlebot3_simulations/turtlebot3_gazebo/models;
 
 
 gazebo --verbose -s libgazebo_ros_factory.so &

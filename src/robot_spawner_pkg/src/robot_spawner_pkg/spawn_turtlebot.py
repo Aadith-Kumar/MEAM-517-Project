@@ -22,7 +22,7 @@ def main():
         get_package_share_directory("turtlebot3_gazebo"), "models",
         "turtlebot3_burger", "model-1_4.sdf")
     
-    sdf_file_path = "/home/aadith/Desktop/turtlebot3_ws/src/turtlebot3_simulations/turtlebot3_gazebo/models/turtlebot3_burger/model-1_4.sdf"
+    sdf_file_path = "/home/aadith/Desktop/MEAM-517-Project/src/turtlebot3_simulations/turtlebot3_gazebo/models/turtlebot3_burger/model-1_4.sdf"
     
     node = rclpy.create_node("entity_spawner")
 
