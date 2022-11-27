@@ -86,7 +86,7 @@ Keep commented for now, will remove later
 
 """
 
-  	def discrete_time_linearized_dynamics(self, xr, ur, T):
+  	def discrete_time_linearized_dynamics(self, xr, ur, dt):
 		# TODO: Pranav add dynamics
 		# CHECK PAPER
 		# Discrete time version of the linearized dynamics at the fixed point
@@ -99,13 +99,13 @@ Keep commented for now, will remove later
 		v_r = xr[2]
 		theta_r = ur[0]
 
-		A_d = np.array([[1, 0, -v_r*np.sin(theta_r)*T],
-						[0, 1, v_r*np.cos(theta_r)*T],
+		A_d = np.array([[1, 0, -v_r*np.sin(theta_r)*dt],
+						[0, 1, v_r*np.cos(theta_r)*dt],
 						[0, 0, 1]])
 
-		B_d = np.array([[np.cos(theta_r)*T, 0],
-						[np.sin(theta_r)*T, 0],
-						[0, T]])
+		B_d = np.array([[np.cos(theta_r)*dt, 0],
+						[np.sin(theta_r)*dt, 0],
+						[0, dt]])
 
 		return A_d, B_d
 
