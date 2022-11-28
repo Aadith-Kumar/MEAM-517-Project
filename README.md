@@ -21,6 +21,10 @@ to reflect the path to whereever you have the REPO
 sdf_file_path = "--ADD PATH TO REPO--/MEAM-517-Project/src/turtlebot3_simulations/turtlebot3_gazebo/models/turtlebot3_burger/model-1_4.sdf"
 ```
 
+After pulling the Repo, open the file: MEAM-517-Project/src/turtlebot3_simulations/turtlebot3_gazebo/models/turtlebot3_burger/model-1_4.sdf
+
+There are four instances of hardcoded path, change them to reflect your path!
+
 
 
 
