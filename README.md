@@ -47,6 +47,9 @@ To Control robot with teleop:
 
 ``` sh teleop.sh <robot number> ```
 
+To launch the state_reader to read turtlebot ground truth position run:
+
+```ros2 run mpc sample_state_update_code.py```
 
      
      
