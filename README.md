@@ -26,6 +26,8 @@ After pulling the Repo, open the file: MEAM-517-Project/src/turtlebot3_simulatio
 There are four instances of hardcoded path, change them to reflect your path!
 
 
+It would be nice if we could get our Robot to take this model path in one location, but I don't know how it works
+
 
 
 Node: Guys,I have set up a git ignore file to ignore all the build/ , log/ and install/ folders as we would want to build them in our own system and do not want other build executables pushed to the git!
