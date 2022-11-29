@@ -25,9 +25,9 @@ class Robot(object):
 		self.m = 1
 		self.a = 0.25
 		self.I = 0.0625
-		self.Q = np.diag([10,10,1]) # Shape based on state
-		self.R = np.diag([1,1])
-		self.Qf = np.diag([10,10,1])
+		self.Q = np.diag([10,10,0.1]) # Shape based on state
+		self.R = np.diag([5,10])
+		self.Qf = np.diag([10,10,0.1])
 
 		# Input limits
 		self.umin = np.array([-0.26, ])
@@ -37,18 +37,6 @@ class Robot(object):
 		self.nu = 2
 
 		# iLQR data
-
-   
-	def x_d(self, t):
-		# TODO: Return desired state at time t
-		# Required trajectory
-		return x_traj(t)
-	
-	def u_d(self, t):
-		# TODO: Return desired control input at time t
-		# MAY NOT BE NEEDED
-		# Based on trajectory
-		return u_traj(t)
 
 	def continuous_time_full_dynamics(self, x, u):
 		# Dynamics for the quadrotor
@@ -90,8 +78,11 @@ class Robot(object):
 	"""
 
 	def discrete_time_linearized_dynamics(self, xr, ur, dt):
-		# TODO: Pranav add dynamics
 		# CHECK PAPER
+
+		# xr - Intermediate goal 
+		# ur - Previous input
+
 		# Discrete time version of the linearized dynamics at the fixed point
 		# This function returns A and B matrix of the discrete time dynamics
 
@@ -119,34 +110,29 @@ class Robot(object):
 		# TODO: MPC 
 	###
 	def add_initial_state_constraint(self, prog, x, x_current):
-		# TODO: impose initial state constraint.  
-		# Use AddBoundingBoxConstraint
 		prog.AddBoundingBoxConstraint(x_current, x_current, x[0])
 
 	def add_input_saturation_constraint(self, prog, x, u, N):
-		# TODO: impose input limit constraint.
-		# Use AddBoundingBoxConstraint
-		# The limits are available through self.umin and self.umax  
+		# u desired at goal is [0, 0]
+
 		for ui in u:
-			prog.AddBoundingBoxConstraint(self.umin - self.u_d()[0], self.umax - self.u_d()[0], ui[0])
-			prog.AddBoundingBoxConstraint(self.umin - self.u_d()[0], self.umax - self.u_d()[0], ui[1])
+			prog.AddBoundingBoxConstraint(self.umin, self.umax, ui[0])
+			prog.AddBoundingBoxConstraint(self.umin, self.umax, ui[1])
 
 	def add_dynamics_constraint(self, prog, x, u, N, xr, ur, dt):
-		# TODO: impose dynamics constraint.
-		# Use AddLinearEqualityConstraint(expr, value)
+		# Linearized turtlebot dynamcis
 		A, B = self.discrete_time_linearized_dynamics(xr, ur, dt)
 		for i in range(N-1):
-			prog.AddLinearEqualityConstraint(A @ x[i,:] + B @ u[i,:] - x[i+1,:], np.zeros(6))
+			prog.AddLinearEqualityConstraint(A @ x[i,:] + B @ u[i,:] - x[i+1,:], np.zeros(self.nx))
 
 	def add_cost(self, prog, x, u, N):
 		# x = x_e and u = u_e
-		# TODO: Might need to change
 		for i in range(N-1):
 			prog.AddQuadraticCost(x[i,:] @ self.Q @ x[i,:].T)
 			prog.AddQuadraticCost(u[i,:] @ self.R @ u[i,:].T)
 		prog.AddQuadraticCost(x[i,:] @ self.Qf @ x[i,:])	
 
-	def compute_mpc_feedback(self, x_current, use_clf=False):
+	def compute_mpc_feedback(self, x_current, x_r, u_r, use_clf=False):
 		'''
 		This function computes the MPC controller input u
 		'''
@@ -155,7 +141,7 @@ class Robot(object):
 		N = 10
 		T = 0.1
 
-		# Initialize mathematical program and decalre decision variables
+		# Initialize mathematical program and declare decision variables
 		prog = MathematicalProgram()
 		x = np.zeros((N, self.nx), dtype="object")
 		for i in range(N):
@@ -167,7 +153,7 @@ class Robot(object):
 		# Add constraints and cost
 		self.add_initial_state_constraint(prog, x, x_current)
 		self.add_input_saturation_constraint(prog, x, u, N)
-		self.add_dynamics_constraint(prog, x, u, N, T)
+		self.add_dynamics_constraint(prog, x, u, N, x_r, u_r, T)
 		self.add_cost(prog, x, u, N)
 
 		# Solve the QP
@@ -180,8 +166,7 @@ class Robot(object):
 		# You should make use of result.GetSolution(decision_var) where decision_var
 		# is the variable you want
 
-		u_e = result.GetSolution(u)[0]
-		u_mpc = u_e + self.u_d()
+		u_mpc = result.GetSolution(u)[0]
 		
 		return u_mpc
 
@@ -192,5 +177,5 @@ class Robot(object):
 		A, B = self.continuous_time_linearized_dynamics()
 		S = solve_continuous_are(A, B, self.Q, self.R)
 		K = -inv(self.R) @ B.T @ S
-		u = self.u_d() + K @ x
+		u = K @ x
 		return u
