@@ -40,14 +40,14 @@ class Robot(object):
 		# TODO: Return desired state at time t
 		# Required trajectory
 		return x_traj(t)
-
-  	def u_d(self, t):
+	
+	def u_d(self, t):
 		# TODO: Return desired control input at time t
 		# MAY NOT BE NEEDED
 		# Based on trajectory
 		return u_traj(t)
 
-  	def continuous_time_full_dynamics(self, x, u):
+	def continuous_time_full_dynamics(self, x, u):
 		# Dynamics for the quadrotor
 		# TODO: Pranav add dynamics
 
@@ -60,33 +60,33 @@ class Robot(object):
 						w])
 		return xdot
 
-"""
-Keep commented for now, will remove later
-  	def continuous_time_linearized_dynamics(self, xr, ur):
-		# TODO: Pranav add dynamics
-		# Dynamics linearized at the fixed point
-		# This function returns A and B matrix
+	"""
+	Keep commented for now, will remove later
+		def continuous_time_linearized_dynamics(self, xr, ur):
+			# TODO: Pranav add dynamics
+			# Dynamics linearized at the fixed point
+			# This function returns A and B matrix
 
-		# theta_r (reference theta)
-		# v _r (reference velocity)
-		# T (sampling period)
+			# theta_r (reference theta)
+			# v _r (reference velocity)
+			# T (sampling period)
 
-		theta_r = xr[2]
-		v_r = ur[0]
+			theta_r = xr[2]
+			v_r = ur[0]
 
-		A = np.array([[1, 0, -v_r*np.sin(theta_r)],
-					  [0, 1, v_r*np.cos(theta_r)],
-					  [0, 0, 1]])
+			A = np.array([[1, 0, -v_r*np.sin(theta_r)],
+						[0, 1, v_r*np.cos(theta_r)],
+						[0, 0, 1]])
 
-		B = np.array([[np.cos(theta_r), 0],
-					  [np.sin(theta_r), 0],
-					  [0, 1]])
+			B = np.array([[np.cos(theta_r), 0],
+						[np.sin(theta_r), 0],
+						[0, 1]])
 
-		return A, B
+			return A, B
 
-"""
+	"""
 
-  	def discrete_time_linearized_dynamics(self, xr, ur, dt):
+	def discrete_time_linearized_dynamics(self, xr, ur, dt):
 		# TODO: Pranav add dynamics
 		# CHECK PAPER
 		# Discrete time version of the linearized dynamics at the fixed point
@@ -111,15 +111,15 @@ Keep commented for now, will remove later
 
 
 
-  ###
-	# TODO: MPC 
-  ###
-  	def add_initial_state_constraint(self, prog, x, x_current):
+	###
+		# TODO: MPC 
+	###
+	def add_initial_state_constraint(self, prog, x, x_current):
 		# TODO: impose initial state constraint.  
 		# Use AddBoundingBoxConstraint
 		prog.AddBoundingBoxConstraint(x_current, x_current, x[0])
 
-  	def add_input_saturation_constraint(self, prog, x, u, N):
+	def add_input_saturation_constraint(self, prog, x, u, N):
 		# TODO: impose input limit constraint.
 		# Use AddBoundingBoxConstraint
 		# The limits are available through self.umin and self.umax  
@@ -127,14 +127,14 @@ Keep commented for now, will remove later
 			prog.AddBoundingBoxConstraint(self.umin - self.u_d()[0], self.umax - self.u_d()[0], ui[0])
 			prog.AddBoundingBoxConstraint(self.umin - self.u_d()[0], self.umax - self.u_d()[0], ui[1])
 
-  	def add_dynamics_constraint(self, prog, x, u, N, T):
+	def add_dynamics_constraint(self, prog, x, u, N, T):
 		# TODO: impose dynamics constraint.
 		# Use AddLinearEqualityConstraint(expr, value)
 		A, B = self.discrete_time_linearized_dynamics(T)
 		for i in range(N-1):
 			prog.AddLinearEqualityConstraint(A @ x[i,:] + B @ u[i,:] - x[i+1,:], np.zeros(6))
 
-  	def add_cost(self, prog, x, u, N):
+	def add_cost(self, prog, x, u, N):
 		# x = x_e and u = u_e
 		# TODO: Might need to change
 		for i in range(N-1):
@@ -142,7 +142,7 @@ Keep commented for now, will remove later
 			prog.AddQuadraticCost(u[i,:] @ self.R @ u[i,:].T)
 		prog.AddQuadraticCost(x[i,:] @ self.Qf @ x[i,:])	
 
-  	def compute_mpc_feedback(self, x_current, use_clf=False):
+	def compute_mpc_feedback(self, x_current, use_clf=False):
 		'''
 		This function computes the MPC controller input u
 		'''
@@ -155,10 +155,10 @@ Keep commented for now, will remove later
 		prog = MathematicalProgram()
 		x = np.zeros((N, self.nx), dtype="object")
 		for i in range(N):
-		x[i] = prog.NewContinuousVariables(self.nx, "x_" + str(i))
+			x[i] = prog.NewContinuousVariables(self.nx, "x_" + str(i))
 		u = np.zeros((N-1, self.nu), dtype="object")
 		for i in range(N-1):
-		u[i] = prog.NewContinuousVariables(self.nu, "u_" + str(i))
+			u[i] = prog.NewContinuousVariables(self.nu, "u_" + str(i))
 
 		# Add constraints and cost
 		self.add_initial_state_constraint(prog, x, x_current)
@@ -181,12 +181,12 @@ Keep commented for now, will remove later
 		
 		return u_mpc
 
-  	def compute_lqr_feedback(self, x):
+	def compute_lqr_feedback(self, x):
 		'''
 		Infinite horizon LQR controller
 		'''
 		A, B = self.continuous_time_linearized_dynamics()
 		S = solve_continuous_are(A, B, self.Q, self.R)
 		K = -inv(self.R) @ B.T @ S
-		u = self.u_d() + K @ x;
+		u = self.u_d() + K @ x
 		return u
