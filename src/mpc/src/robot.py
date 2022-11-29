@@ -35,6 +35,9 @@ class Robot(object):
 
 		self.nx = 3
 		self.nu = 2
+
+		# iLQR data
+
    
 	def x_d(self, t):
 		# TODO: Return desired state at time t
@@ -108,6 +111,7 @@ class Robot(object):
 						[0, dt]])
 
 		return A_d, B_d
+
 
 
 
