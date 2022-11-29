@@ -99,8 +99,8 @@ class Robot(object):
 		# A_d = np.identity(3) + A_c * T;
 		# B_d = B_c * T;
 
-		v_r = xr[2]
-		theta_r = ur[0]
+		v_r = ur[0]
+		theta_r = xr[2]
 
 		A_d = np.array([[1, 0, -v_r*np.sin(theta_r)*dt],
 						[0, 1, v_r*np.cos(theta_r)*dt],
@@ -134,7 +134,7 @@ class Robot(object):
 	def add_dynamics_constraint(self, prog, x, u, N, T):
 		# TODO: impose dynamics constraint.
 		# Use AddLinearEqualityConstraint(expr, value)
-		A, B = self.discrete_time_linearized_dynamics(T)
+		A, B = self.discrete_time_linearized_dynamics(xr, ur, dt)
 		for i in range(N-1):
 			prog.AddLinearEqualityConstraint(A @ x[i,:] + B @ u[i,:] - x[i+1,:], np.zeros(6))
 
