@@ -131,7 +131,7 @@ class Robot(object):
 			prog.AddBoundingBoxConstraint(self.umin - self.u_d()[0], self.umax - self.u_d()[0], ui[0])
 			prog.AddBoundingBoxConstraint(self.umin - self.u_d()[0], self.umax - self.u_d()[0], ui[1])
 
-	def add_dynamics_constraint(self, prog, x, u, N, T):
+	def add_dynamics_constraint(self, prog, x, u, N, xr, ur, dt):
 		# TODO: impose dynamics constraint.
 		# Use AddLinearEqualityConstraint(expr, value)
 		A, B = self.discrete_time_linearized_dynamics(xr, ur, dt)
