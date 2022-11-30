@@ -27,6 +27,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   src/sample_state_update_code.py
   src/goal_update_template.py
+  src/robot.py
   src/control.py
   DESTINATION lib/${PROJECT_NAME}
 )

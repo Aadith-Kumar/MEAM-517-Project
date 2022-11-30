@@ -30,8 +30,8 @@ class Robot(object):
 		self.Qf = np.diag([10,10,0.1])
 
 		# Input limits
-		self.umin = np.array([-0.26, ])
-		self.umax = np.array([0.26, ])
+		self.umin = np.array([-0.26, -2.84])
+		self.umax = np.array([0.26, 2.84])
 
 		self.nx = 3 # x, y, theta
 		self.nu = 2 # v, theta dot(omega)
@@ -116,8 +116,8 @@ class Robot(object):
 		# u desired at goal is [0, 0]
 
 		for ui in u:
-			prog.AddBoundingBoxConstraint(self.umin, self.umax, ui[0])
-			prog.AddBoundingBoxConstraint(self.umin, self.umax, ui[1])
+			prog.AddBoundingBoxConstraint(self.umin[0], self.umax[0], ui[0])
+			prog.AddBoundingBoxConstraint(self.umin[1], self.umax[1], ui[1])
 
 	def add_dynamics_constraint(self, prog, x, u, N, xr, ur, dt):
 		# Linearized turtlebot dynamcis
@@ -125,12 +125,12 @@ class Robot(object):
 		for i in range(N-1):
 			prog.AddLinearEqualityConstraint(A @ x[i,:] + B @ u[i,:] - x[i+1,:], np.zeros(self.nx))
 
-	def add_cost(self, prog, x, u, N):
+	def add_cost(self, prog, xe, u, N):
 		# x = x_e and u = u_e
 		for i in range(N-1):
-			prog.AddQuadraticCost(x[i,:] @ self.Q @ x[i,:].T)
+			prog.AddQuadraticCost(xe[i,:] @ self.Q @ xe[i,:].T)
 			prog.AddQuadraticCost(u[i,:] @ self.R @ u[i,:].T)
-		prog.AddQuadraticCost(x[i,:] @ self.Qf @ x[i,:])	
+		prog.AddQuadraticCost(xe[i,:] @ self.Qf @ xe[i,:])	
 
 	def compute_mpc_feedback(self, x_current, x_r, u_r, T):
 		'''
@@ -153,7 +153,7 @@ class Robot(object):
 		self.add_initial_state_constraint(prog, x, x_current)
 		self.add_input_saturation_constraint(prog, x, u, N)
 		self.add_dynamics_constraint(prog, x, u, N, x_r, u_r, T)
-		self.add_cost(prog, x, u, N)
+		self.add_cost(prog, x-x_r.reshape((1,self.nx)), u, N)
 
 		# Solve the QP
 		solver = OsqpSolver()

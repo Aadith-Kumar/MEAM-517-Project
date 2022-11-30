@@ -13,6 +13,7 @@ from math import sin, cos, pi
 from scipy.integrate import solve_ivp
 from robot import Robot
 import matplotlib.pyplot as plt
+import time
 
 ################################################################### Global variables ##################################################################
 
@@ -41,7 +42,7 @@ class PoseSubscriber(Node):                             # Node that houses the s
         self.subscription                               # prevent unused variable warning
 
     def update_global_state(self, msg):
-        global current_pose;
+        global current_pose
         current_pose = msg.pose.pose;                   # Pose contains position(current_pose.position.x/y/z) and orientation (current_pose.orientation.w/x/y/z)
         #self.get_logger().info("pose updated")
 
@@ -53,20 +54,20 @@ class CommandPublisher(Node):
     def __init__(self, robot = 1):
         self.num = robot
         super().__init__('robot_command_publisher')
-        self.publisher_ = self.create_publisher(Pose, "robot" + str(robot) + "/cmd_vel", 10)
+        self.publisher_ = self.create_publisher(Twist, "robot" + str(robot) + "/cmd_vel", 10)
 
 
 
 
 # This function returns the current state of the robot in [x,y,theta] form. Theta is in Radians I think?
 def get_current_state():
+    update()
     global current_pose;
     curr = current_pose;
     x = curr.position.x;
     y = curr.position.y;
     r = R.from_quat([ curr.orientation.w, curr.orientation.x, curr.orientation.y, curr.orientation.z])
     theta = r.as_euler('zyx')
-    #print("Theta is : " ,theta)
     return np.array([x,y,theta[2]]);
 
 
@@ -97,13 +98,12 @@ def publish_robot_command (u):
     cmd = Twist();
     cmd.linear.x = u[0];
     cmd.angular.z = u[1];
-    robot_cmd_publisher.publisher_.publish(cmd);
-    print("Command Published   v: ", u[0], "   tdot : ",u[1]);
+    robot_cmd_publisher.publisher_.publish(cmd)
 
 
 
-def update(node):
-    rclpy.spin_once(node);
+def update():
+    rclpy.spin_once(robot_pose_subscriber);
 
 
 def initialze_ros():
@@ -130,18 +130,17 @@ def robot_mpc(robot):
 
     dt = 1e-2
 
-    # x = [x0]
-    # u = [np.zeros((2,))]
-    # t = [t0]
-
     ur = np.zeros(robot.nu)
-    while update_goal():
-        # current_time = t[-1]
+    while not update_goal():
         current_x = get_current_state() # Only x, y
 
         xr = current_goal
 
         current_u_command = robot.compute_mpc_feedback(current_x, xr, ur, dt)
+        print("MPC output: ", current_u_command)
+        print("Current goal: ", current_goal)
+        print("Current state in loop: ", current_x)
+
 
         current_u_real = np.clip(current_u_command, robot.umin, robot.umax)
         # # Autonomous ODE for constant inputs to work with solve_ivp
@@ -157,7 +156,9 @@ def robot_mpc(robot):
 
         # Publish u
         ur = current_u_real
+        print(ur)
         publish_robot_command(current_u_real)
+        time.sleep(0.1)
 
 
     current_u_command = np.zeros(2) # STOP AT GOAL
@@ -172,13 +173,15 @@ def robot_mpc(robot):
 def main(args):
 
     initialze_ros()
-    global waypoints;
+    global waypoints
+    global current_goal
+    global current_waypoint_index
 
 
-    number_of_robots = args[1]
+    number_of_robots = args
     print("Number of robots: ", number_of_robots)
-    R = np.diag(5, 10);
-    Q = np.diag([10, 10, 0.1]);
+    R = np.diag([0.1, 0.1]);
+    Q = np.diag([10, 10, 0]);
     Qf = Q;
 
     robot = Robot(Q, R, Qf);
@@ -190,21 +193,23 @@ def main(args):
     goal  = [(5, 5)]
 
     # TODO: Call astar service
-    waypoints = np.array([  [0, 0]
-                            [1, 0]
-                            [2, 1]
-                            [3, 2]
-                            [4, 1]
-                            [5, 0]
-                            [6, 1]
-                            [6, 2]
-                            [5, 3]
-                            [5, 4]
-                            [5, 5]])
+    waypoints = np.array([  [0, 0, 0],
+                            [1, 0, 0],
+                            [2, 1, 0],
+                            [3, 2, 0],
+                            [4, 1, 0],
+                            [5, 0, 0],
+                            [6, 1, 0],
+                            [6, 2, 0],
+                            [5, 3, 0],
+                            [5, 4, 0],
+                            [5, 5, 0]])
+    current_goal = waypoints[0]
+    current_waypoint_index = 0
 
     robot_mpc(robot)
 
 
 
 if __name__ == '__main__':
-    main()
+    main(1)
