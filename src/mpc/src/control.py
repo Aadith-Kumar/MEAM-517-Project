@@ -169,38 +169,38 @@ def robot_mpc(robot):
     #   t = np.array(t)
     #   return x, u, t
 
-    def main(args):
+def main(args):
 
-        initalize_ros()
+    initialze_ros()
 
-        number_of_robots = args[1]
-        print("Number of robots: ", number_of_robots)
-        R = np.diag(5, 10);
-        Q = np.diag([10, 10, 0.1]);
-        Qf = Q;
+    number_of_robots = args[1]
+    print("Number of robots: ", number_of_robots)
+    R = np.diag(5, 10);
+    Q = np.diag([10, 10, 0.1]);
+    Qf = Q;
 
-        robot = robot(Q, R, Qf);
+    robot = robot(Q, R, Qf);
 
-        # TODO: get map
-        
-        # Initial state
-        start = [(0, 0)]
-        goal  = [(5, 5)]
+    # TODO: get map
+    
+    # Initial state
+    start = [(0, 0)]
+    goal  = [(5, 5)]
 
-        # TODO: Call astar service
-        waypoints = np.array([  [0, 0]
-                                [1, 0]
-                                [2, 1]
-                                [3, 2]
-                                [4, 1]
-                                [5, 0]
-                                [6, 1]
-                                [6, 2]
-                                [5, 3]
-                                [5, 4]
-                                [5, 5]])
+    # TODO: Call astar service
+    waypoints = np.array([  [0, 0]
+                            [1, 0]
+                            [2, 1]
+                            [3, 2]
+                            [4, 1]
+                            [5, 0]
+                            [6, 1]
+                            [6, 2]
+                            [5, 3]
+                            [5, 4]
+                            [5, 5]])
 
-        robot_mpc(robot)
+    robot_mpc(robot)
 
 
 
