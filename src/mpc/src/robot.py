@@ -160,7 +160,7 @@ class Robot(object):
 		solver = OsqpSolver()
 		result = solver.Solve(prog)
 
-		u_mpc = np.zeros(2) # v_dot and theta_dot
+		u_mpc = np.zeros(2) # v and theta_dot
 		# TODO: retrieve the controller input from the solution of the optimization problem
 		# and use it to compute the MPC input u
 		# You should make use of result.GetSolution(decision_var) where decision_var

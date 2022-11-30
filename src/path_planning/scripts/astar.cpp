@@ -4,6 +4,9 @@
 using namespace std;
 
 
+// TODO: Add ROS
+// TODO: ROS waypoint message should contain x,y,theta
+
 typedef pair <int, int> xy;
 vector<vector<int>> grid
 {
@@ -65,7 +68,7 @@ float get_distance(int x1, int y1, int x2, int y2)
     );
 }
 
-vector<xy> astar(xy start, xy goal)
+vector<xy> astar(xy start, xy goal, vector<vector<int>> grid)
 {
     vector<xy> path;
     priority_queue<waypoint, vector<waypoint>, CompareCost> minheap;
@@ -116,7 +119,6 @@ vector<xy> astar(xy start, xy goal)
         }
     }
 
-    return path;
 }
 
 
@@ -129,7 +131,7 @@ int main(int argc, const char** argv)
     goal.first = stoi(argv[3]);
     goal.second = stoi(argv[4]);
 
-    vector<xy> path = astar(start, goal);
+    vector<xy> path = astar(start, goal, grid);
     cout << "PATH" << endl;
     for(auto p : path)
         cout << p.first << ", " << p.second << endl;
