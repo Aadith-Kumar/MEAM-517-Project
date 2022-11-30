@@ -73,7 +73,7 @@ def get_current_state():
 
 
 #This function checks if the robot's current state is within the radius of the goal, and if so, it changes the goal to the next one. Returns true if the final goal is reached or false otherwise. 
-def update_goal(radius=0.01):
+def update_goal(radius=0.1):
     global waypoints;
     global current_waypoint_index;
     global current_goal;
@@ -128,7 +128,7 @@ def robot_mpc(robot):
   
     t0 = 0.0
 
-    dt = 1e-2
+    dt = 0.1
 
     ur = np.zeros(robot.nu)
     while not update_goal():
@@ -180,7 +180,7 @@ def main(args):
 
     number_of_robots = args
     print("Number of robots: ", number_of_robots)
-    R = np.diag([0.1, 0.1]);
+    R = np.diag([1, 2]);
     Q = np.diag([10, 10, 0]);
     Qf = Q;
 
@@ -193,6 +193,8 @@ def main(args):
     goal  = [(5, 5)]
 
     # TODO: Call astar service
+    # waypoints = np.array([  [0, 0, 0],
+    #                         [1, 0.15, 0]])
     waypoints = np.array([  [0, 0, 0],
                             [1, 0, 0],
                             [2, 1, 0],
@@ -203,7 +205,7 @@ def main(args):
                             [6, 2, 0],
                             [5, 3, 0],
                             [5, 4, 0],
-                            [5, 5, 0]])
+                            [5, 5, 0]])/2
     current_goal = waypoints[0]
     current_waypoint_index = 0
 

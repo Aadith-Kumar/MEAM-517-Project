@@ -25,9 +25,9 @@ class Robot(object):
 		self.m = 1
 		self.a = 0.25
 		self.I = 0.0625
-		self.Q = np.diag([10,10,0.1]) # Shape based on state
-		self.R = np.diag([5,10])
-		self.Qf = np.diag([10,10,0.1])
+		self.Q = Q # Shape based on state
+		self.R = R
+		self.Qf = Qf
 
 		# Input limits
 		self.umin = np.array([-0.26, -2.84])
@@ -113,13 +113,13 @@ class Robot(object):
 		prog.AddBoundingBoxConstraint(x_current, x_current, x[0])
 
 	def add_input_saturation_constraint(self, prog, x, u, N):
-		# u desired at goal is [0, 0]
+		# Constraint on min and max input
 
 		for ui in u:
 			prog.AddBoundingBoxConstraint(self.umin[0], self.umax[0], ui[0])
 			prog.AddBoundingBoxConstraint(self.umin[1], self.umax[1], ui[1])
 
-	def add_dynamics_constraint(self, prog, x, u, N, xr, ur, dt):
+	def add_dynamics_constraint(self, prog, x, u, N, xr, ur, x_current, dt):
 		# Linearized turtlebot dynamcis
 		A, B = self.discrete_time_linearized_dynamics(xr, ur, dt)
 		for i in range(N-1):
@@ -152,11 +152,12 @@ class Robot(object):
 		# Add constraints and cost
 		self.add_initial_state_constraint(prog, x, x_current)
 		self.add_input_saturation_constraint(prog, x, u, N)
-		self.add_dynamics_constraint(prog, x, u, N, x_r, u_r, T)
+		self.add_dynamics_constraint(prog, x, u, N, x_r, u_r, x_current, T)
 		self.add_cost(prog, x-x_r.reshape((1,self.nx)), u, N)
 
 		# Solve the QP
-		solver = OsqpSolver()
+		# solver = OsqpSolver()
+		solver = SnoptSolver()
 		result = solver.Solve(prog)
 
 		u_mpc = np.zeros(2) # v and theta_dot
