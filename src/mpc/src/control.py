@@ -128,7 +128,7 @@ def robot_mpc(robot):
   
     t0 = 0.0
 
-    dt = 0.1
+    dt = 0.2
     goal_radius = 0.1
     ur = np.zeros(robot.nu)
     while not update_goal(goal_radius):
@@ -182,7 +182,7 @@ def main(args):
     number_of_robots = args
     print("Number of robots: ", number_of_robots)
     Q = np.diag([10, 10, 0]);
-    R = np.diag([5, 1]);
+    R = np.diag([5, 5]);
     Qf = Q;
 
     robot = Robot(Q, R, Qf);
