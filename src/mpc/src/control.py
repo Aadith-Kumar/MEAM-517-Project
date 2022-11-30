@@ -129,9 +129,9 @@ def robot_mpc(robot):
     t0 = 0.0
 
     dt = 0.1
-
+    goal_radius = 0.1
     ur = np.zeros(robot.nu)
-    while not update_goal():
+    while not update_goal(goal_radius):
         current_x = get_current_state() # Only x, y
 
         xr = current_goal
@@ -158,10 +158,11 @@ def robot_mpc(robot):
         ur = current_u_real
         print(ur)
         publish_robot_command(current_u_real)
-        time.sleep(0.1)
+        time.sleep(dt)
 
 
     current_u_command = np.zeros(2) # STOP AT GOAL
+    publish_robot_command(current_u_real)
     print("GOAL REACHED")
     return True
 
@@ -180,8 +181,8 @@ def main(args):
 
     number_of_robots = args
     print("Number of robots: ", number_of_robots)
-    R = np.diag([1, 2]);
     Q = np.diag([10, 10, 0]);
+    R = np.diag([5, 1]);
     Qf = Q;
 
     robot = Robot(Q, R, Qf);
@@ -193,19 +194,21 @@ def main(args):
     goal  = [(5, 5)]
 
     # TODO: Call astar service
-    # waypoints = np.array([  [0, 0, 0],
-    #                         [1, 0.15, 0]])
     waypoints = np.array([  [0, 0, 0],
-                            [1, 0, 0],
-                            [2, 1, 0],
-                            [3, 2, 0],
-                            [4, 1, 0],
-                            [5, 0, 0],
-                            [6, 1, 0],
-                            [6, 2, 0],
-                            [5, 3, 0],
-                            [5, 4, 0],
-                            [5, 5, 0]])/2
+                            [1, 0.15, 0],
+                            [2, 0, 0],
+                            [3, -0.15, 0]])
+    # waypoints = np.array([  [0, 0, 0],
+    #                         [1, 0, 0],
+    #                         [2, 1, 0],
+    #                         [3, 2, 0],
+    #                         [4, 1, 0],
+    #                         [5, 0, 0],
+    #                         [6, 1, 0],
+    #                         [6, 2, 0],
+    #                         [5, 3, 0],
+    #                         [5, 4, 0],
+    #                         [5, 5, 0]])/2
     current_goal = waypoints[0]
     current_waypoint_index = 0
 

@@ -9,7 +9,7 @@ from scipy.integrate import ode
 from scipy.integrate import solve_ivp
 from scipy.linalg import expm
 from scipy.linalg import solve_continuous_are
-
+	
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.solvers.osqp import OsqpSolver
 from pydrake.solvers.snopt import SnoptSolver
@@ -156,8 +156,8 @@ class Robot(object):
 		self.add_cost(prog, x-x_r.reshape((1,self.nx)), u, N)
 
 		# Solve the QP
-		# solver = OsqpSolver()
-		solver = SnoptSolver()
+		solver = OsqpSolver() 
+		# solver = SnoptSolver()
 		result = solver.Solve(prog)
 
 		u_mpc = np.zeros(2) # v and theta_dot
