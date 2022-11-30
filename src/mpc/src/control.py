@@ -17,12 +17,13 @@ import matplotlib.pyplot as plt
 ################################################################### Global variables ##################################################################
 
 
-current_pose = Pose();   
-waypoints = [];                                         # Nx3 array [x,y,th]
+current_pose =Pose();                                   # Global variable that updates state when required
 current_goal = None;
+waypoints = [];                                         # Nx3 array [x,y,th]
+current_goal = [];
 current_waypoint_index = 0;                             # The index of the current waypoint that we are tracking - index of goal
-robot1_cmd_publisher = None;
-robot1_pose_subscriber = None;
+robot_cmd_publisher = 0;
+robot_pose_subscriber = 0;
 
 ######################################################################### ROS #########################################################################
 
@@ -31,6 +32,7 @@ class PoseSubscriber(Node):                             # Node that houses the s
 
     def __init__(self, robot_number = 1):
         super().__init__('pose_subscriber')
+        self.num = robot_number
         self.subscription = self.create_subscription(
             Odometry,
             "/robot" + str(robot_number) + "/state",         # The topic to listen to
@@ -49,17 +51,20 @@ class PoseSubscriber(Node):                             # Node that houses the s
 class CommandPublisher(Node):
 
     def __init__(self, robot = 1):
+        self.num = robot
         super().__init__('robot_command_publisher')
         self.publisher_ = self.create_publisher(Pose, "robot" + str(robot) + "/cmd_vel", 10)
+
 
 
 
 # This function returns the current state of the robot in [x,y,theta] form. Theta is in Radians I think?
 def get_current_state():
     global current_pose;
-    x = current_pose.position.x;
-    y = current_pose.position.y;
-    r = R.from_quat([ current_pose.orientation.w, current_pose.orientation.x, current_pose.orientation.y, current_pose.orientation.z])
+    curr = current_pose;
+    x = curr.position.x;
+    y = curr.position.y;
+    r = R.from_quat([ curr.orientation.w, curr.orientation.x, curr.orientation.y, curr.orientation.z])
     theta = r.as_euler('zyx')
     #print("Theta is : " ,theta)
     return np.array([x,y,theta[2]]);
@@ -85,18 +90,32 @@ def update_goal(radius=0.01):
     
     return False
 
+
 #This function publishes the command U to the robot cmd_publisher refers to
-def publish_robot_command(u, cmd_publisher=robot1_cmd_publisher):
+def publish_robot_command (u):
+    global robot_cmd_publisher;
     cmd = Twist();
     cmd.linear.x = u[0];
     cmd.angular.z = u[1];
-    cmd_publisher.publisher_.publish(cmd);
+    robot_cmd_publisher.publisher_.publish(cmd);
     print("Command Published   v: ", u[0], "   tdot : ",u[1]);
 
 
 
 def update(node):
     rclpy.spin_once(node);
+
+
+def initialze_ros():
+    global robot_pose_subscriber;
+    global robot_cmd_publisher;
+    global current_pose;
+
+    rclpy.init()
+
+    current_pose = Pose();
+    robot_cmd_publisher = CommandPublisher(1);
+    robot_pose_subscriber = PoseSubscriber(1);
 
 
 
@@ -108,7 +127,6 @@ def robot_mpc(robot):
   # TODO: Nice comment for function
   
     t0 = 0.0
-    n_points = 1000
 
     dt = 1e-2
 
@@ -119,7 +137,7 @@ def robot_mpc(robot):
     ur = np.zeros(robot.nu)
     while update_goal():
         # current_time = t[-1]
-        current_x = get_current_state()[:-1] # Only x, y
+        current_x = get_current_state() # Only x, y
 
         xr = current_goal
 
@@ -153,7 +171,10 @@ def robot_mpc(robot):
 
     def main(args):
 
+        initalize_ros()
+
         number_of_robots = args[1]
+        print("Number of robots: ", number_of_robots)
         R = np.diag(5, 10);
         Q = np.diag([10, 10, 0.1]);
         Qf = Q;
