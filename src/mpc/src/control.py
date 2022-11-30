@@ -173,7 +173,7 @@ def main(args):
 
     initialze_ros()
     global waypoints;
-    
+
 
     number_of_robots = args[1]
     print("Number of robots: ", number_of_robots)
@@ -181,7 +181,7 @@ def main(args):
     Q = np.diag([10, 10, 0.1]);
     Qf = Q;
 
-    robot = robot(Q, R, Qf);
+    robot = Robot(Q, R, Qf);
 
     # TODO: get map
     
