@@ -172,6 +172,8 @@ def robot_mpc(robot):
 def main(args):
 
     initialze_ros()
+    global waypoints;
+    
 
     number_of_robots = args[1]
     print("Number of robots: ", number_of_robots)
