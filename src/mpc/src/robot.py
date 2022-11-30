@@ -33,8 +33,8 @@ class Robot(object):
 		self.umin = np.array([-0.26, ])
 		self.umax = np.array([0.26, ])
 
-		self.nx = 3
-		self.nu = 2
+		self.nx = 3 # x, y, theta
+		self.nu = 2 # v, theta dot(omega)
 
 		# iLQR data
 
@@ -132,14 +132,13 @@ class Robot(object):
 			prog.AddQuadraticCost(u[i,:] @ self.R @ u[i,:].T)
 		prog.AddQuadraticCost(x[i,:] @ self.Qf @ x[i,:])	
 
-	def compute_mpc_feedback(self, x_current, x_r, u_r, use_clf=False):
+	def compute_mpc_feedback(self, x_current, x_r, u_r, T):
 		'''
 		This function computes the MPC controller input u
 		'''
 
 		# Parameters for the QP
 		N = 10
-		T = 0.1
 
 		# Initialize mathematical program and declare decision variables
 		prog = MathematicalProgram()
@@ -161,10 +160,6 @@ class Robot(object):
 		result = solver.Solve(prog)
 
 		u_mpc = np.zeros(2) # v and theta_dot
-		# TODO: retrieve the controller input from the solution of the optimization problem
-		# and use it to compute the MPC input u
-		# You should make use of result.GetSolution(decision_var) where decision_var
-		# is the variable you want
 
 		u_mpc = result.GetSolution(u)[0]
 		

@@ -14,8 +14,8 @@ vector<vector<int>> grid
     {0,1,1,1,1,0,0,0},
     {0,0,0,1,1,0,0,0},
     {0,0,0,0,1,0,0,0},
-    {0,0,0,0,1,0,0,0},
-    {0,1,1,0,1,0,0,0},
+    {0,0,1,1,1,0,0,0},
+    {0,1,1,0,0,0,0,0},
     {0,0,0,1,0,0,0,0},
     {0,0,0,0,0,0,0,0}
 }; 
@@ -133,9 +133,10 @@ int main(int argc, const char** argv)
 
     vector<xy> path = astar(start, goal, grid);
     cout << "PATH" << endl;
+    cout << "[";
     for(auto p : path)
-        cout << p.first << ", " << p.second << endl;
-    cout << endl;
+        cout << "[" << p.first << ", " << p.second << "]" << endl;
+    cout << "]" << endl;
 
     return 0;
 }
