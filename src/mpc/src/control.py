@@ -128,7 +128,7 @@ def robot_mpc(robot):
   
     t0 = 0.0
 
-    dt = 0.1
+    dt = 0.2
     goal_radius = 0.1
     ur = np.zeros(robot.nu)
     while not update_goal(goal_radius):
@@ -137,6 +137,9 @@ def robot_mpc(robot):
         xr = current_goal
 
         current_u_command = robot.compute_mpc_feedback(current_x, xr, ur, dt)
+        #current_u_command = robot.compute_mpc_feedback(0, current_x, ur, dt)
+        
+        
         print("MPC output: ", current_u_command)
         print("Current goal: ", current_goal)
         print("Current state in loop: ", current_x)

@@ -126,7 +126,6 @@ class Robot(object):
 			prog.AddLinearEqualityConstraint(A @ x[i,:] + B @ u[i,:] - x[i+1,:], np.zeros(self.nx))
 
 	def add_cost(self, prog, xe, u, N):
-		# x = x_e and u = u_e
 		for i in range(N-1):
 			prog.AddQuadraticCost(xe[i,:] @ self.Q @ xe[i,:].T)
 			prog.AddQuadraticCost(u[i,:] @ self.R @ u[i,:].T)
