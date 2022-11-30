@@ -33,7 +33,7 @@ class PoseSubscriber(Node):                             # Node that houses the s
 
     def update_global_state(self, msg):
         global current_pose;
-        current_pose[self.num-1] = msg.pose.pose;                   # Pose contains position(current_pose.position.x/y/z) and orientation (current_pose.orientation.w/x/y/z)
+        current_pose = msg.pose.pose;                   # Pose contains position(current_pose.position.x/y/z) and orientation (current_pose.orientation.w/x/y/z)
         #self.get_logger().info("pose updated")
 
 
@@ -104,7 +104,7 @@ def main(args=None):
     initialze_ros();
 
     while True:
-        update(robot_pose_subscribers[0]);
+        update();
         x = get_current_state()
 
         print("theta is : ", x[2])
@@ -121,7 +121,7 @@ def initialze_ros():
     global robot_cmd_publisher;
     global current_pose;
 
-    rclpy.init(args=args)
+    rclpy.init()
 
     current_pose = Pose();
     robot_cmd_publisher = CommandPublisher(1);
