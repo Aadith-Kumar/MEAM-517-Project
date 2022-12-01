@@ -208,12 +208,95 @@ def main(args):
                             [ 5,  3,  0.78539816],
                             [ 5,  4,  1.57079633],
                             [ 5,  5,  1.57079633]])
+
     current_goal = waypoints[0]
     current_waypoint_index = 0
 
     robot_mpc(robot)
 
+def pseudo_main():
+    tf = 10000
+
+    dt = 0.1
+    goal_radius = 0.1
+
+    # Q = np.diag([5, 5, 0.01]);
+    # R = np.diag([0.1, 0.1]);
+    Q = np.diag([5, 5, 0.01]);
+    R = np.diag([0.1, 0.2]);
+    Qf = Q#np.diag([0.01, 0.01, 0]);
+    umin = np.array([-0.26, -1])
+    umax = np.array([0.26, 1])
+
+    robot = Robot(Q, R, Qf);
+    ur = np.zeros(robot.nu)
+
+    # waypoints = np.array([[0,0,0],
+    #                      [0,-1,-1.5708],
+    #                      [-2,0.15,0.5218],
+    #                      [-3,0.3,0.1489]])
+    waypoints = np.array( [ [ 0,  0,  0.        ],
+                            [ 1,  0,  3.14159265],
+                            [ 2,  1,  2.35619449],
+                            [ 3,  2,  2.35619449],
+                            [ 4,  1, -2.35619449],
+                            [ 5,  0, -2.35619449],
+                            [ 6,  1,  2.35619449],
+                            [ 6,  2,  1.57079633],
+                            [ 5,  3,  0.78539816],
+                            [ 5,  4,  1.57079633],
+                            [ 5,  5,  1.57079633]])
+
+    x = [waypoints[0]]
+    u = [ur]
+    t = 0
+    plt.figure()
+    for i in range(waypoints.shape[0]-1):
+        x_r = waypoints[i+1]
+
+        while (np.linalg.norm(x[-1]-x_r) >= goal_radius) and (t <= tf):
+            current_x = x[-1]
+            xr = x_r.copy()
+            ur = u[-1]
+            current_u_command = robot.compute_mpc_feedback(current_x, xr, ur, dt)
+            clipped_u = np.clip(current_u_command, umin, umax)
+
+            def f(t, x):
+                return robot.continuous_time_full_dynamics(current_x, clipped_u)
+            sol = solve_ivp(f, (0, dt), current_x, first_step=dt)
+
+            # xdot = robot.continuous_time_full_dynamics(current_x, clipped_u)
+            # new_x = current_x + xdot*dt
+            t += dt
+
+            x.append(sol.y[:,-1])
+            u.append(clipped_u)
+            # print(sol.y)
+            print("---------------------------------------")
+            print("Goal is: ", xr)
+            print("U command: ", clipped_u)
+            print("State: ", x[-1])
+            print("---------------------------------------")
+
+        if(i == waypoints.shape[0]-1):
+            print("Goal reached")
+
+        if(t > tf):
+            plot_x = np.array(x)
+            plt.plot(plot_x[:,0], plot_x[:,1])
+            plt.show()
+            break;
+
+    print("All goals reached!!! Hello time: ", t)
+    plot_x = np.array(x)
+    plt.plot(plot_x[:,0], plot_x[:,1], label='my path')
+    plt.plot(waypoints[:,0], waypoints[:,1], 'rx', label='waypoints')
+    plt.legend()
+    plt.show()
+
+
 
 
 if __name__ == '__main__':
-    main(1)
+    # main(1)
+    pseudo_main()
