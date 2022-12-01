@@ -134,6 +134,7 @@ class Robot(object):
 			prog.AddConstraint(x[i,2] + f[2]*dt - x[i+1,2], 0, 0)
 		
 
+
 	def add_cost(self, prog, xe, u, N):
 		for i in range(N-1):
 			prog.AddQuadraticCost(xe[i,:] @ self.Q @ xe[i,:].T)
