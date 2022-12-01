@@ -128,7 +128,6 @@ def robot_mpc(robot):
   
     t0 = 0.0
 
-
     dt = 0.15
     goal_radius = 0.1
     ur = np.zeros(robot.nu)
