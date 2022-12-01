@@ -171,7 +171,7 @@ def robot_mpc(robot):
     plt.plot(x[:, 0], x[:, 1], "b-", label="MPC path")
     plt.plot(waypoints[:, 0], waypoints[: ,1], "rx", label="Waypoints")
     plt.legend()
-    plt.savefig("path.png")
+    plt.savefig("path_noTheta.png")
 
 def main(args):
 
