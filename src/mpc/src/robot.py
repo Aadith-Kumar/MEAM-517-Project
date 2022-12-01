@@ -30,11 +30,11 @@ class Robot(object):
 		self.Qf = Qf
 
 		# Input limits
-		# self.umin = np.array([-0.26, -2.84])
-		# self.umax = np.array([0.26, 2.84])
+		self.umin = np.array([-0.26, -2.84])
+		self.umax = np.array([0.26, 2.84])
 		
-		self.umin = np.array([-0.26, -1.0])
-		self.umax = np.array([0.26, 1.0])
+		# self.umin = np.array([-0.26, -1.0])
+		# self.umax = np.array([0.26, 1.0])
 
 
 		self.nx = 3 # x, y, theta

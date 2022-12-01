@@ -131,6 +131,7 @@ def robot_mpc(robot):
     dt = 0.15
     goal_radius = 0.1
     ur = np.zeros(robot.nu)
+    x = [waypoints[0]]
     while not update_goal(goal_radius):
         current_x = get_current_state() # x, y, theta
 
@@ -151,7 +152,7 @@ def robot_mpc(robot):
 
         # # Record time, state, and inputs
         # t.append(t[-1] + dt)
-        # x.append(sol.y[:, -1])
+        x.append(current_x)
         # u.append(current_u_command)
 
         # Publish u
@@ -162,13 +163,12 @@ def robot_mpc(robot):
 
     current_u_command = np.zeros(2) # STOP AT GOAL
     publish_robot_command(current_u_command)
-    print("GOAL REACHED")
-    return True
 
-    #   x = np.array(x)
-    #   u = np.array(u)
-    #   t = np.array(t)
-    #   return x, u, t
+    x= np.array(x)
+    plt.plot(x[:, 0], x[:, 1], "b-", label="MPC path")
+    plt.plot(waypoints[:, 0], waypoints[: ,1], "rx", label="Waypoints")
+    plt.legend()
+    plt.savefig("path.png")
 
 def main(args):
 
