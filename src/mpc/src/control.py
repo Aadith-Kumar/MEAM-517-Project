@@ -168,7 +168,7 @@ def robot_mpc(robot):
     plt.plot(x[:, 0], x[:, 1], "b-", label="MPC path")
     plt.plot(waypoints[:, 0], waypoints[: ,1], "rx", label="Waypoints")
     plt.legend()
-    plt.savefig("path.png")
+    plt.savefig("path_noTheta.png")
 
 def main(args):
 
@@ -197,17 +197,17 @@ def main(args):
     #                         [ -1  , 0  , 0],
     #                         [-2.  ,  0.15,  0.1488899583428],
     #                         [-3.  , -0.3 , -0.42285393]])
-    waypoints = np.array( [ [ 0,  0,  0.        ],
-                            [ 1,  0,  3.14159265],
-                            [ 2,  1,  2.35619449],
-                            [ 3,  2,  2.35619449],
-                            [ 4,  1, -2.35619449],
-                            [ 5,  0, -2.35619449],
-                            [ 6,  1,  2.35619449],
-                            [ 6,  2,  1.57079633],
-                            [ 5,  3,  0.78539816],
-                            [ 5,  4,  1.57079633],
-                            [ 5,  5,  1.57079633]])
+    waypoints = np.array( [ [ 0,  0, 0.],
+                            [ 1,  0, 0],
+                            [ 2,  1, 0],
+                            [ 3,  2, 0],
+                            [ 4,  1, 0],
+                            [ 5,  0, 0],
+                            [ 6,  1, 0],
+                            [ 6,  2, 0],
+                            [ 5,  3, 0],
+                            [ 5,  4, 0],
+                            [ 5,  5, 0]])
     current_goal = waypoints[0]
     current_waypoint_index = 0
 
