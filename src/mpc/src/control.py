@@ -128,11 +128,13 @@ def robot_mpc(robot):
   
     t0 = 0.0
 
-    dt = 0.2
+
+    dt = 0.15
     goal_radius = 0.1
     ur = np.zeros(robot.nu)
+    x = [waypoints[0]]
     while not update_goal(goal_radius):
-        current_x = get_current_state() # Only x, y
+        current_x = get_current_state() # x, y, theta
 
         xr = current_goal
 
@@ -154,25 +156,23 @@ def robot_mpc(robot):
 
         # # Record time, state, and inputs
         # t.append(t[-1] + dt)
-        # x.append(sol.y[:, -1])
+        x.append(current_x)
         # u.append(current_u_command)
 
         # Publish u
         ur = current_u_real
-        print(ur)
         publish_robot_command(current_u_real)
         time.sleep(dt)
 
 
     current_u_command = np.zeros(2) # STOP AT GOAL
-    publish_robot_command(current_u_real)
-    print("GOAL REACHED")
-    return True
+    publish_robot_command(current_u_command)
 
-    #   x = np.array(x)
-    #   u = np.array(u)
-    #   t = np.array(t)
-    #   return x, u, t
+    x= np.array(x)
+    plt.plot(x[:, 0], x[:, 1], "b-", label="MPC path")
+    plt.plot(waypoints[:, 0], waypoints[: ,1], "rx", label="Waypoints")
+    plt.legend()
+    plt.savefig("path.png")
 
 def main(args):
 
@@ -184,9 +184,9 @@ def main(args):
 
     number_of_robots = args
     print("Number of robots: ", number_of_robots)
-    Q = np.diag([10, 10, 0]);
-    R = np.diag([5, 1]);
-    Qf = Q;
+    Q = np.diag([1.2, 1.2, 0])
+    R = np.diag([0.1, 0.15])
+    Qf = Q
 
     robot = Robot(Q, R, Qf);
 
@@ -197,21 +197,21 @@ def main(args):
     goal  = [(5, 5)]
 
     # TODO: Call astar service
-    waypoints = np.array([  [0, 0, 0],
-                            [1, 0.15, 0],
-                            [2, 0, 0],
-                            [3, -0.15, 0]])
-    # waypoints = np.array([  [0, 0, 0],
-    #                         [1, 0, 0],
-    #                         [2, 1, 0],
-    #                         [3, 2, 0],
-    #                         [4, 1, 0],
-    #                         [5, 0, 0],
-    #                         [6, 1, 0],
-    #                         [6, 2, 0],
-    #                         [5, 3, 0],
-    #                         [5, 4, 0],
-    #                         [5, 5, 0]])/2
+    # waypoints = np.array( [ [ 0.  ,  0.  ,  0.        ],
+    #                         [ -1  , 0  , 0],
+    #                         [-2.  ,  0.15,  0.1488899583428],
+    #                         [-3.  , -0.3 , -0.42285393]])
+    waypoints = np.array( [ [ 0,  0,  0.        ],
+                            [ 1,  0,  3.14159265],
+                            [ 2,  1,  2.35619449],
+                            [ 3,  2,  2.35619449],
+                            [ 4,  1, -2.35619449],
+                            [ 5,  0, -2.35619449],
+                            [ 6,  1,  2.35619449],
+                            [ 6,  2,  1.57079633],
+                            [ 5,  3,  0.78539816],
+                            [ 5,  4,  1.57079633],
+                            [ 5,  5,  1.57079633]])
     current_goal = waypoints[0]
     current_waypoint_index = 0
 

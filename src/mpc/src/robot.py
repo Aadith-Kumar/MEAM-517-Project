@@ -32,6 +32,10 @@ class Robot(object):
 		# Input limits
 		self.umin = np.array([-0.26, -2.84])
 		self.umax = np.array([0.26, 2.84])
+		
+		# self.umin = np.array([-0.26, -1.0])
+		# self.umax = np.array([0.26, 1.0])
+
 
 		self.nx = 3 # x, y, theta
 		self.nu = 2 # v, theta dot(omega)
@@ -42,9 +46,9 @@ class Robot(object):
 		# Dynamics for the quadrotor
 		# TODO: Pranav add dynamics
 
-		theta = x[2]
-		v = u[0]
-		w = u[1]
+		theta = -x[2]
+		v = -u[0]
+		w = -u[1]
 
 		xdot = np.array([v*np.cos(theta),
 						v*np.sin(theta),
@@ -121,15 +125,20 @@ class Robot(object):
 
 	def add_dynamics_constraint(self, prog, x, u, N, xr, ur, x_current, dt):
 		# Linearized turtlebot dynamcis
-		A, B = self.discrete_time_linearized_dynamics(xr, ur, dt)
+		# A, B = self.discrete_time_linearized_dynamics(xr, ur, dt)
 		for i in range(N-1):
-			prog.AddLinearEqualityConstraint(A @ x[i,:] + B @ u[i,:] - x[i+1,:], np.zeros(self.nx))
+			# prog.AddLinearEqualityConstraint(A @ x[i,:] + B @ u[i,:] - x[i+1,:], np.zeros(self.nx))
+			f = self.continuous_time_full_dynamics(x[i,:], u[i,:])
+			prog.AddConstraint(x[i,0] + f[0]*dt - x[i+1,0], 0, 0)
+			prog.AddConstraint(x[i,1] + f[1]*dt - x[i+1,1], 0, 0)
+			prog.AddConstraint(x[i,2] + f[2]*dt - x[i+1,2], 0, 0)
+		
 
 	def add_cost(self, prog, xe, u, N):
 		for i in range(N-1):
 			prog.AddQuadraticCost(xe[i,:] @ self.Q @ xe[i,:].T)
 			prog.AddQuadraticCost(u[i,:] @ self.R @ u[i,:].T)
-		prog.AddQuadraticCost(xe[i,:] @ self.Qf @ xe[i,:])	
+		prog.AddQuadraticCost(xe[i,:] @ self.Qf @ xe[i,:].T)	
 
 	def compute_mpc_feedback(self, x_current, x_r, u_r, T):
 		'''
@@ -155,8 +164,8 @@ class Robot(object):
 		self.add_cost(prog, x-x_r.reshape((1,self.nx)), u, N)
 
 		# Solve the QP
-		solver = OsqpSolver() 
-		# solver = SnoptSolver()
+		# solver = OsqpSolver() 
+		solver = SnoptSolver()
 		result = solver.Solve(prog)
 
 		u_mpc = np.zeros(2) # v and theta_dot
