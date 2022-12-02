@@ -51,9 +51,8 @@ To Control robot with teleop:
 
 To launch MPC controller for a given robot run:
 
-```ros2 run mpc single_mpc_control.py <robot number> ```
+```ros2 run mpc single_mpc_control.py <total number of robots> <robot ID> ```
 
-Note: the total number of robots has to be updated in the MPC code, and cannot yet be provided by CLI
      
      
      
