@@ -14,6 +14,7 @@ from scipy.integrate import solve_ivp
 from robot import Robot
 import matplotlib.pyplot as plt
 import time
+import sys
 
 ################################################################### Global variables ##################################################################
 
@@ -135,7 +136,8 @@ def initialze_ros(robot_count = 3):
     global robot_pose_subscribers;
     global robot_cmd_publishers;
     global robot_poses;
-    global num_robots
+    global num_robots;
+
 
     rclpy.init()
     robot_cmd_publishers = [None];
@@ -215,10 +217,11 @@ def main(args):
     global num_robots
 
     num_robots = 2;
-    robot_id = 2;
+ 
     initialze_ros(num_robots+1) # ROBOTS ARE INDEXED FROM 1
-
     print("Number of robots: ", num_robots)
+    robot_id = int(sys.argv[1]);
+    print("Robot ID : ", robot_id)
     Q = np.diag([1.2, 1.2, 0])
     R = np.diag([0.1, 0.15])
     Qf = Q
