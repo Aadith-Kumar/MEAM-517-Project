@@ -216,7 +216,7 @@ def main(args):
     global current_waypoint_index
     global num_robots
 
-    num_robots = 2;
+    num_robots = 4;
  
     initialze_ros(num_robots+1) # ROBOTS ARE INDEXED FROM 1
     print("Number of robots: ", num_robots)

@@ -41,18 +41,20 @@ build instructions:
      `$ colcon build`
 
 
-To launch simulator with 2 turtlebots, Run:
+To launch simulator with multiple turtlebots, Run:
 
-```sh sim_launch.sh```
+```bash multi_sim_launch.sh <num_robots>```
 
 To Control robot with teleop:
 
 ``` sh teleop.sh <robot number> ```
 
-To launch the state_reader to read turtlebot ground truth position run:
+To launch MPC controller for a given robot run:
 
-```ros2 run mpc sample_state_update_code.py```
+```ros2 run mpc single_mpc_control.py <robot number> ```
 
+Note: the total number of robots has to be updated in the MPC code, and cannot yet be provided by CLI
      
      
      
+   
