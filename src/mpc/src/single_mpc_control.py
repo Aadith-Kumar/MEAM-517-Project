@@ -216,12 +216,15 @@ def main(args):
     global current_waypoint_index
     global num_robots
 
-    num_robots = 4;
- 
+    if(len(sys.argv) < 3):
+        print ("Please enter number of robots and this node robot id as arguments")
+        return;
+
+
+    num_robots = int(sys.argv[1]);
+    robot_id = int(sys.argv[2]);
+
     initialze_ros(num_robots+1) # ROBOTS ARE INDEXED FROM 1
-    print("Number of robots: ", num_robots)
-    robot_id = int(sys.argv[1]);
-    print("Robot ID : ", robot_id)
     Q = np.diag([1.2, 1.2, 0])
     R = np.diag([0.1, 0.15])
     Qf = Q
