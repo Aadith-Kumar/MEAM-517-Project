@@ -141,6 +141,9 @@ class Robot(object):
 			prog.AddQuadraticCost(u[i,:] @ self.R @ u[i,:].T)
 		prog.AddQuadraticCost(xe[i,:] @ self.Qf @ xe[i,:].T)	
 
+	def add_obstacle_constraints(self, prog, x_current, obs_center, obs_radius, inflate=1.1):
+		prog.AddLinearInequalityConstraint(np.linalg.norm(x_current[:-1] - obs_center)>inflate*obs_radius)
+
 	def compute_mpc_feedback(self, x_current, x_r, u_r, T):
 		'''
 		This function computes the MPC controller input u
