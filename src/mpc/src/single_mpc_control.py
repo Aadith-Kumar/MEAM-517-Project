@@ -17,22 +17,24 @@ import time
 
 ################################################################### Global variables ##################################################################
 
-
-current_pose =Pose();                                   # Global variable that updates state when required
+#current_pose =Pose();                                   # Global variable that updates state when required
 current_goal = None;
 waypoints = [];                                         # Nx3 array [x,y,th]
-current_goal = [];
+#current_goal = [];
 current_waypoint_index = 0;                             # The index of the current waypoint that we are tracking - index of goal
-robot_cmd_publisher = 0;
-robot_pose_subscriber = 0;
+robot_cmd_publishers = [];
+robot_pose_subscribers = [];
+robot_poses = [];
+num_robots = 0;
+#robot_id = 1;
 
 ######################################################################### ROS #########################################################################
 
 
 class PoseSubscriber(Node):                             # Node that houses the subscriber and updates global var for position
 
-    def __init__(self, robot_number = 1):
-        super().__init__('pose_subscriber')
+    def __init__(self, robot_number):
+        super().__init__('pose_subscriber'+str(robot_number))
         self.num = robot_number
         self.subscription = self.create_subscription(
             Odometry,
@@ -42,8 +44,8 @@ class PoseSubscriber(Node):                             # Node that houses the s
         self.subscription                               # prevent unused variable warning
 
     def update_global_state(self, msg):
-        global current_pose
-        current_pose = msg.pose.pose;                   # Pose contains position(current_pose.position.x/y/z) and orientation (current_pose.orientation.w/x/y/z)
+        global robot_poses
+        robot_poses[self.num] = msg.pose.pose;                   # Pose contains position(current_pose.position.x/y/z) and orientation (current_pose.orientation.w/x/y/z)
         #self.get_logger().info("pose updated")
 
 
@@ -51,34 +53,50 @@ class PoseSubscriber(Node):                             # Node that houses the s
 
 class CommandPublisher(Node):
 
-    def __init__(self, robot = 1):
+    def __init__(self, robot):
         self.num = robot
-        super().__init__('robot_command_publisher')
+        super().__init__('robot_command_publisher'+str(robot))
         self.publisher_ = self.create_publisher(Twist, "robot" + str(robot) + "/cmd_vel", 10)
 
 
 
 
 # This function returns the current state of the robot in [x,y,theta] form. Theta is in Radians I think?
-def get_current_state():
-    update()
-    global current_pose;
-    curr = current_pose;
-    x = curr.position.x;
-    y = curr.position.y;
-    r = R.from_quat([ curr.orientation.w, curr.orientation.x, curr.orientation.y, curr.orientation.z])
+# def get_current_state():
+#     update()
+#     global current_pose;
+#     curr = current_pose;
+#     x = curr.position.x;
+#     y = curr.position.y;
+#     r = R.from_quat([ curr.orientation.w, curr.orientation.x, curr.orientation.y, curr.orientation.z])
+#     theta = r.as_euler('zyx')
+#     return np.array([x,y,theta[2]]);
+
+def get_robot_state(robot_id):
+
+    update_all();
+    global robot_poses;
+    pose = robot_poses[robot_id];
+
+    x = pose.position.x;
+    y = pose.position.y;
+    r = R.from_quat([ pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z])
     theta = r.as_euler('zyx')
+    
     return np.array([x,y,theta[2]]);
 
 
 
+
+
+
 #This function checks if the robot's current state is within the radius of the goal, and if so, it changes the goal to the next one. Returns true if the final goal is reached or false otherwise. 
-def update_goal(radius=0.1):
+def update_goal(radius, robot_id):
     global waypoints;
     global current_waypoint_index;
     global current_goal;
 
-    state = get_current_state();
+    state = get_robot_state(robot_id);
 
 
     if( np.sqrt((current_goal[0]-state[0])**2 + (current_goal[1]-state[1])**2 ) < radius):
@@ -93,29 +111,44 @@ def update_goal(radius=0.1):
 
 
 #This function publishes the command U to the robot cmd_publisher refers to
-def publish_robot_command (u):
-    global robot_cmd_publisher;
+def publish_robot_command (u, robot_id):
+    global robot_cmd_publishers;
+
     cmd = Twist();
     cmd.linear.x = u[0];
     cmd.angular.z = u[1];
-    robot_cmd_publisher.publisher_.publish(cmd)
+    robot_cmd_publishers[robot_id].publisher_.publish(cmd)
 
 
 
-def update():
-    rclpy.spin_once(robot_pose_subscriber);
+def update(robot_id):
+    
+    rclpy.spin_once(robot_pose_subscribers[robot_id]);
+
+def update_all():
+    global num_robots
+    for i in range(1,num_robots+1):
+        update(i);
 
 
-def initialze_ros():
-    global robot_pose_subscriber;
-    global robot_cmd_publisher;
-    global current_pose;
+def initialze_ros(robot_count = 3):
+    global robot_pose_subscribers;
+    global robot_cmd_publishers;
+    global robot_poses;
+    global num_robots
 
     rclpy.init()
+    robot_cmd_publishers = [None];
+    robot_pose_subscribers = [None];
+    robot_poses = [Pose()];
+    
+    #num_robots = robot_count
 
-    current_pose = Pose();
-    robot_cmd_publisher = CommandPublisher(1);
-    robot_pose_subscriber = PoseSubscriber(1);
+    
+    for i in range(1,robot_count):
+        robot_poses += [Pose()];
+        robot_cmd_publishers += [CommandPublisher(i)];
+        robot_pose_subscribers += [PoseSubscriber(i)];
 
 
 
@@ -123,18 +156,18 @@ def initialze_ros():
 ######################################################################### MPC #########################################################################
 
 
-def robot_mpc(robot):
+def robot_mpc(robot, robot_id ):
   # TODO: Nice comment for function
   
-    t0 = 0.0
-
     dt = 0.15
     goal_radius = 0.1
+
     ur = np.zeros(robot.nu)
     x = [waypoints[0]]
-    while not update_goal(goal_radius):
-        current_x = get_current_state() # x, y, theta
+    while not update_goal(goal_radius, robot_id):
 
+
+        current_x = get_robot_state(robot_id) # x, y, theta
         xr = current_goal
 
         current_u_command = robot.compute_mpc_feedback(current_x, xr, ur, dt)
@@ -160,12 +193,12 @@ def robot_mpc(robot):
 
         # Publish u
         ur = current_u_real
-        publish_robot_command(current_u_real)
+        publish_robot_command(current_u_real,robot_id)
         time.sleep(dt)
 
 
     current_u_command = np.zeros(2) # STOP AT GOAL
-    publish_robot_command(current_u_command)
+    publish_robot_command(current_u_command, robot_id)
 
     x= np.array(x)
     plt.plot(x[:, 0], x[:, 1], "b-", label="MPC path")
@@ -175,14 +208,17 @@ def robot_mpc(robot):
 
 def main(args):
 
-    initialze_ros()
+  
     global waypoints
     global current_goal
     global current_waypoint_index
+    global num_robots
 
+    num_robots = 2;
+    robot_id = 2;
+    initialze_ros(num_robots+1) # ROBOTS ARE INDEXED FROM 1
 
-    number_of_robots = args
-    print("Number of robots: ", number_of_robots)
+    print("Number of robots: ", num_robots)
     Q = np.diag([1.2, 1.2, 0])
     R = np.diag([0.1, 0.15])
     Qf = Q
@@ -214,7 +250,7 @@ def main(args):
     current_goal = waypoints[0]
     current_waypoint_index = 0
 
-    robot_mpc(robot)
+    robot_mpc(robot,robot_id)
 
 
 

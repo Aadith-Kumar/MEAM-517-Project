@@ -29,6 +29,7 @@ install(PROGRAMS
   src/goal_update_template.py
   src/robot.py
   src/control.py
+  src/single_mpc_control.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
