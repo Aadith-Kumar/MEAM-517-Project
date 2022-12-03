@@ -6,4 +6,5 @@
 MEAM-517-Project.code-workspace
 path.png
 
-/.vscode/
+/.vscode/*
+.vscode/

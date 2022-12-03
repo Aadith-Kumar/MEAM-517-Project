@@ -10,18 +10,20 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(meam517_interfaces REQUIRED)
 
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
 
 add_executable(cpp_publisher scripts/cpp_pub.cpp)
-add_executable(astar scripts/astar.cpp)
-ament_target_dependencies(cpp_publisher rclcpp std_msgs)
+add_executable(find_path_server scripts/astar.cpp)
+ament_target_dependencies(find_path_server rclcpp std_msgs geometry_msgs meam517_interfaces)
+add_executable(find_path_client scripts/test_waypoint_client.cpp)
+ament_target_dependencies(find_path_client rclcpp std_msgs geometry_msgs meam517_interfaces)
 
 install(TARGETS
   cpp_publisher
-  astar
+  find_path_server
+  find_path_client
   DESTINATION lib/${PROJECT_NAME})
 
 
