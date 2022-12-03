@@ -1,6 +1,12 @@
 #include <bits/stdc++.h>
 #include <vector>
 
+#include "rclcpp/rclcpp.hpp"
+#include "meam517_interfaces/srv/waypoints.hpp"
+#include "geometry_msgs/msg/point.hpp"
+
+#include <memory>
+
 using namespace std;
 
 
@@ -70,6 +76,7 @@ float get_distance(int x1, int y1, int x2, int y2)
 
 vector<xy> astar(xy start, xy goal, vector<vector<int>> grid)
 {
+    cout << "A* called" << endl;
     vector<xy> path;
     priority_queue<waypoint, vector<waypoint>, CompareCost> minheap;
     set<xy> visited;
@@ -121,22 +128,48 @@ vector<xy> astar(xy start, xy goal, vector<vector<int>> grid)
 
 }
 
+void find_path(const std::shared_ptr<meam517_interfaces::srv::Waypoints::Request> request,
+          std::shared_ptr<meam517_interfaces::srv::Waypoints::Response>     response)
+{
+    cout << "Entered service" << endl;
+    xy start, goal;
+    start.first = request->start.x;
+    start.second = request->start.y;
+    goal.first = request->end.x;
+    goal.second = request->end.y;
+
+    cout << "Start: " << start.first << ", " << start.second << endl;
+    cout << "Goal: " << goal.first << ", " << goal.second << endl;
+
+    vector<xy> path = astar(start, goal, grid);
+    for(auto p : path){
+        cout << p.first << ", " << p.second << endl;
+    }
+    for(auto p : path){
+        geometry_msgs::msg::Point point;
+        point.x = p.first;
+        point.y = p.second;
+        response.get()->path.push_back(point);
+    }
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "path: %d", path.size());
+    for(auto p : response->path){
+        cout << p.x << ", " << p.y << endl;
+    }
+}
 
 int main(int argc, const char** argv)
 {
+    rclcpp::init(argc, argv);
 
-    xy start, goal;
-    start.first = stoi(argv[1]);
-    start.second = stoi(argv[2]);
-    goal.first = stoi(argv[3]);
-    goal.second = stoi(argv[4]);
+    std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("find_path_server");
 
-    vector<xy> path = astar(start, goal, grid);
-    cout << "PATH" << endl;
-    cout << "[";
-    for(auto p : path)
-        cout << "[" << p.first << ", " << p.second << "]" << endl;
-    cout << "]" << endl;
+    rclcpp::Service<meam517_interfaces::srv::Waypoints>::SharedPtr service =
+        node->create_service<meam517_interfaces::srv::Waypoints>("find_path", &find_path);
+
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Ready to find path");
+
+    rclcpp::spin(node);
+    rclcpp::shutdown();
 
     return 0;
 }
