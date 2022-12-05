@@ -1,6 +1,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "meam517_interfaces/srv/waypoints.hpp"
 
+#include "geometry_msgs/msg/point.hpp"
+
 #include <chrono>
 #include <cstdlib>
 #include <memory>
@@ -40,11 +42,12 @@ int main(int argc, char **argv)
         rclcpp::FutureReturnCode::SUCCESS)
     {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Waypoint found");
-        std::cout << result.get()->path.size() << std::endl;
-        for(auto p : result.get()->path){
-            // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Waypoint: %lf" "%lf",
-            //     p.x, p.y);
-            std::cout << p.x << ", " << p.y << std::endl;
+        int size = result.get()->path.size();
+        // geometry_msgs::msg::Point start = result.get()->path.front();
+        for(int i=0;i<size;i++){
+            
+            // std::cout << result.get()->path.front().x << std::endl;
+            // std::cout << result.get()->path.at(1).x << ", " << result.get()->path.at(1).y << std::endl;
         }
     } else {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service find_path");
