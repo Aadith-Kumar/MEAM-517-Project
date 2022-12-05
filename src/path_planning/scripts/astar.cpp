@@ -142,19 +142,19 @@ void find_path(const std::shared_ptr<meam517_interfaces::srv::Waypoints::Request
     cout << "Goal: " << goal.first << ", " << goal.second << endl;
 
     vector<xy> path = astar(start, goal, grid);
-    for(auto p : path){
-        cout << p.first << ", " << p.second << endl;
-    }
+    // for(auto p : path){
+    //     cout << p.first << ", " << p.second << endl;
+    // }
     for(auto p : path){
         geometry_msgs::msg::Point point;
         point.x = p.first;
         point.y = p.second;
         response.get()->path.push_back(point);
     }
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "path: %d", path.size());
-    for(auto p : response->path){
-        cout << p.x << ", " << p.y << endl;
-    }
+    // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "path: %d", path.size());
+    // for(auto p : response->path){
+    //     cout << p.x << ", " << p.y << endl;
+    // }
 }
 
 int main(int argc, const char** argv)
