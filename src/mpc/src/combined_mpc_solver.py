@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # import numpy as np
 # import matplotlib.pyplot as plt
 # from numpy.linalg import inv
@@ -10,6 +12,9 @@
 # from scipy.linalg import expm
 # from scipy.linalg import solve_continuous_are
     
+import sys
+import pdb
+import time
 from pydrake.solvers import mathematicalprogram as mp
 from pydrake.solvers.osqp import OsqpSolver
 from pydrake.solvers.snopt import SnoptSolver
@@ -24,7 +29,7 @@ from rclpy.node import Node
 import numpy as np
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseWithCovariance, Pose, Twist
+from geometry_msgs.msg import PoseWithCovariance, Pose, Twist,Point
 
 from scipy.spatial.transform import Rotation as R 
 
@@ -34,32 +39,34 @@ from scipy.spatial.transform import Rotation as R
 
 robot_subscribers = None;
 robot_publishers = None
-robot_goals = None; #Array with current robot goals
-robot_states = None; #Arrays with robot states
+robot_goals = [None]; #Array with current robot goals
+robot_states = [None]; #Arrays with robot states
+controller_mode = "combined_mpc";
 
-robot_num = 2;
+num_robots = 2;
 
 
 ################################ ROS functions
 
 
-class ROS(Node):                             # Node that houses the subscriber and updates global var for position
+class PoseSubscriber(Node):                             # Node that houses the subscriber and updates global var for position
 
-    def __init__(self, num):
-        super().__init__('ros_message handler')
-        self.ID = num
+    def __init__(self, robot):
+        super().__init__('ros_message_handler' + str(robot))
+        self.ID = robot
         self.goal_subscriber = self.create_subscription(
-            Odometry,
-            "/robot" + str(num) + "/current_goal",         # The topic to listen to
+            Point,
+            "/robot" + str(robot) + "/current_goal",         # The topic to listen to
             self.update_goal,
             10)
 
 
         self.state_subscriber = self.create_subscription(
             Odometry,
-            "/robot" + str(num) + "/state",         # The topic to listen to
+            "/robot" + str(robot) + "/state",         # The topic to listen to
             self.update_state,
-            10)                     
+            10)         
+            
 
 
 
@@ -75,21 +82,61 @@ class ROS(Node):                             # Node that houses the subscriber a
         #self.get_logger().info("pose updated")
 
 
-def update():
-    global robot_states
-    for i in range(1,robot_num+1):
-        rclpy.spin_once(robot_subscribers[i]);
-
 
 class CommandPublisher(Node):
 
     def __init__(self, robot = 1):
         self.num = robot
-        super().__init__('robot_command_publisher')
+        super().__init__('robot_command_publisher'+str(robot))
         self.publisher_ = self.create_publisher(Twist, "robot" + str(robot) + "/combined_cmd", 10)
 
 
+def publish_robot_command (u, robot_id):
+    global robot_publishers;
+
+    cmd = Twist();
+    cmd.linear.x = u[0];
+    cmd.angular.z = u[1];
+    robot_publishers[robot_id].publisher_.publish(cmd)
+
+
+def update():
+    global robot_states
+    global num_robots
+    global robot_subscribers
+    for i in range(1,num_robots+1):
+        #print(" The object is : ", robot_subscribers[i])
+        rclpy.spin_once(robot_subscribers[i]);
+
+def get_robot_state(robot_id):
+
+    #update();
+    global robot_states;
+    pose = robot_states[robot_id];
+
+    x = pose.position.x;
+    y = pose.position.y;
+    r = R.from_quat([ pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z])
+    theta = r.as_euler('zyx')
+    
+    return np.array([x,y,theta[2]]);
+
+def get_robot_goal(robot_id):
+
+    #update();
+    global robot_goals;
+    pose = robot_goals[robot_id];
+
+   
+    # r = R.from_quat([ pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z])
+    # theta = r.as_euler('zyx')
+    
+    return pose
+
 ####################################
+
+
+
 
 
 class MPC_system(object):
@@ -153,11 +200,11 @@ class MPC_system(object):
             prog.AddConstraint(x[i,2] + f[2]*dt - x[i+1,2], 0, 0)
         
 
-    def add_collision_constraints(prog,all_x, eps = 0.25):
+    def add_collision_constraints(self,prog , all_x, eps = 0.25):
         for x1 in range(0,len(all_x)):
             for x2 in range(x1+1,len(all_x)):
-                for i in range(0,x1.shape[0]):
-                    prog.AddLinearConstraint((all_x[x1][i,0] -  all_x[x2][i,0])**2 + (all_x[x1][i,1] -  all_x[x2][i,1])**2 > eps);
+                for i in range(0,all_x[x1].shape[0]):
+                    prog.AddConstraint((all_x[x1][i,0] -  all_x[x2][i,0])**2 + (all_x[x1][i,1] -  all_x[x2][i,1])**2 >= eps);
 
 
     def add_cost(self, prog, xe, u, N):
@@ -166,25 +213,30 @@ class MPC_system(object):
             prog.AddQuadraticCost(u[i,:] @ self.R @ u[i,:].T)
         prog.AddQuadraticCost(xe[i,:] @ self.Qf @ xe[i,:].T)	
 
-    def compute_mpc_feedback(self, x_current, x_r, u_r, T):
+
+
+    
+
+
+    def compute_mpc_feedback(self, T):
         '''
         This function computes the MPC controller input u
         '''
 
         # Parameters for the QP
         N = 10
-        cmd_inputs = [];
-        mpc_states = [];
+        all_x = [];
+        all_u = [];
         global robot_goals;
         global robot_states;
 
 
         prog = MathematicalProgram()
-        for i in range(1, robot_num+1):
-            
+        for i in range(1, num_robots+1):
+            update();
             # Initialize mathematical program and declare decision variables
-            update()
-            x_current = robot_states[i]
+            x_current = get_robot_state(i)
+            x_r = get_robot_goal(i);
             
             x = np.zeros((N, self.nx), dtype="object")
             for i in range(N):
@@ -202,22 +254,75 @@ class MPC_system(object):
             all_x += [x]
             # Solve the QP
             # solver = OsqpSolver() 
+            time.sleep(T);
+
         self.add_collision_constraints(prog, all_x)
         solver = SnoptSolver()
         result = solver.Solve(prog)
 
         u_mpc = np.zeros(2) # v and theta_dot
+        robot_count = 1;
+        for u in all_u:
+            #pdb.set_trace()
+            u_mpc = result.GetSolution(u)[0]
+            publish_robot_command(u_mpc,robot_count)
+            print("output published : ", u_mpc)
+            robot_count += 1
 
-        u_mpc = result.GetSolution(u)[0]
+        #print("output published")
 
+
+       
         return u_mpc    
 
-    def compute_lqr_feedback(self, x):
-        '''
-        Infinite horizon LQR controller
-        '''
-        A, B = self.continuous_time_linearized_dynamics()
-        S = solve_continuous_are(A, B, self.Q, self.R)
-        K = -inv(self.R) @ B.T @ S
-        u = K @ x
-        return u
+def initialze_ros(robot_count = 3):
+    global robot_subscribers;
+    global robot_publishers;
+    global robot_states;
+    global robot_goals;
+    global num_robots;
+
+
+    rclpy.init()
+    robot_publishers = [None];
+    robot_subscribers = [None];
+    robot_goals = [np.zeros((3,1))];
+    robot_states = [Pose()];
+    
+    #num_robots = robot_count
+
+
+    for i in range(1,num_robots+1):
+        robot_states += [Pose()];
+        robot_goals += [np.zeros((3,1))];
+        robot_publishers += [CommandPublisher(i)];
+        robot_subscribers += [PoseSubscriber(i)];
+
+
+def main(args):
+
+  
+    global waypoints
+    global current_goal
+    global current_waypoint_index
+    global num_robots
+
+    time.sleep(10);
+
+    num_robots = int(sys.argv[1])
+    initialze_ros(num_robots+1) # ROBOTS ARE INDEXED FROM 1
+
+    Q = np.diag([1.2, 1.2, 0])
+    R = np.diag([0.1, 0.15])
+    Qf = Q
+    dt = 0.15
+
+    robot_system = MPC_system(Q, R, Qf);
+
+    while(controller_mode == "combined_mpc"):
+        
+        robot_system.compute_mpc_feedback(dt);
+
+
+if __name__ == '__main__':
+    main(1)

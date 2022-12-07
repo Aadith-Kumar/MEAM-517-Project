@@ -29,7 +29,7 @@ robot_poses = [];
 num_robots = 0;
 #robot_id = 1;
 control_mode = "combined"
-combined_cmd = None
+combined_cmd = [Twist()]
 
 ######################################################################### ROS #########################################################################
 
@@ -49,7 +49,7 @@ class PoseSubscriber(Node):                             # Node that houses the s
         self.combined_cmd = self.create_subscription(
             Twist,
             "/robot" + str(robot_number) + "/combined_cmd",         # The topic to listen to
-            self.update_global_state,
+            self.update_combined_cmd,
             10)
 
         self.subscription                               # prevent unused variable warning
@@ -61,7 +61,7 @@ class PoseSubscriber(Node):                             # Node that houses the s
 
     def update_combined_cmd(self, msg):
         global combined_cmd;
-        combined_cmd = msg;
+        combined_cmd[self.num] = msg;
         # Pose contains position(current_pose.position.x/y/z) and orientation (current_pose.orientation.w/x/y/z)
         #self.get_logger().info("pose updated")
 
@@ -92,7 +92,7 @@ class CommandPublisher(Node):
 
 def get_robot_state(robot_id):
 
-    update_all();
+    update(robot_id);
     global robot_poses;
     pose = robot_poses[robot_id];
 
@@ -152,7 +152,7 @@ def get_combined_control_command(robot_id):
     global robot_pose_subscribers;
     global combined_cmd;
     update(robot_id);
-    return [combined_cmd.linear.x, combined_cmd.angular.z]
+    return [combined_cmd[robot_id].linear.x, combined_cmd[robot_id].angular.z]
 
 
 
@@ -170,20 +170,24 @@ def initialze_ros(robot_count = 3):
     global robot_cmd_publishers;
     global robot_poses;
     global num_robots;
+    global combined_cmd;
 
 
     rclpy.init()
     robot_cmd_publishers = [None];
     robot_pose_subscribers = [None];
     robot_poses = [Pose()];
+    combined_cmd = [Twist()];
     
     #num_robots = robot_count
 
     
     for i in range(1,robot_count):
         robot_poses += [Pose()];
+        combined_cmd += [Twist()];
         robot_cmd_publishers += [CommandPublisher(i)];
         robot_pose_subscribers += [PoseSubscriber(i)];
+
 
 
 
@@ -205,7 +209,7 @@ def robot_mpc(robot, robot_id ):
         current_x = get_robot_state(robot_id) # x, y, theta
         xr = current_goal
 
-        if (control_mode == "combined"):
+        if (control_mode == "combined_mpc"):
         
             current_u_command = get_combined_control_command(robot_id);
         else:
@@ -233,7 +237,7 @@ def robot_mpc(robot, robot_id ):
         # Publish u
         ur = current_u_real
         publish_robot_command(current_u_real,robot_id)
-        time.sleep(dt)
+        #time.sleep(dt)
 
 
     current_u_command = np.zeros(2) # STOP AT GOAL
@@ -261,7 +265,7 @@ def main(args):
 
     num_robots = int(sys.argv[1]);
     robot_id = int(sys.argv[2]);
-    control_mode = "notcombined"
+    control_mode = "combined_mpc"
 
     initialze_ros(num_robots+1) # ROBOTS ARE INDEXED FROM 1
     Q = np.diag([1.2, 1.2, 0])
