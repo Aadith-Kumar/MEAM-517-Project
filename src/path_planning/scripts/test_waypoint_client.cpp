@@ -42,13 +42,23 @@ int main(int argc, char **argv)
         rclcpp::FutureReturnCode::SUCCESS)
     {
         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Waypoint found");
-        int size = result.get()->path.size();
-        // geometry_msgs::msg::Point start = result.get()->path.front();
+        std::vector<geometry_msgs::msg::Point, std::allocator<geometry_msgs::msg::Point>> path = result.get()->path;
+        int size = path.size();
+        std::cout << "PATH:" << std::endl;
         for(int i=0;i<size;i++){
-            
-            // std::cout << result.get()->path.front().x << std::endl;
-            // std::cout << result.get()->path.at(1).x << ", " << result.get()->path.at(1).y << std::endl;
+            std::cout << path[i].x << ", " << path[i].y << std::endl;
         }
+        
+        
+        
+        
+        std::cout << size << std::endl;
+        // std::cout << result.get()->path[0].x << std::endl;
+        // for(std::vector<geometry_msgs::msg::Point>::const_iterator it = result.get()->path.begin(); it != result.get()->path.end(); ++it){
+        //     std::cout << "pls" << std::endl;
+        //     std::cout << it->x << ", " << it->y <<std::endl;
+        //     // std::cout << result.get()->path.at(1).x << ", " << result.get()->path.at(1).y << std::endl;
+        // }
     } else {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service find_path");
     }
