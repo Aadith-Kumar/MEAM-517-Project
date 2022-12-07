@@ -143,6 +143,11 @@ class Robot(object):
 
 	def add_obstacle_constraints(self, prog, x_current, obs_center, obs_radius, inflate=1.1):
 		prog.AddLinearInequalityConstraint(np.linalg.norm(x_current[:-1] - obs_center)>inflate*obs_radius)
+	
+	def add_chance_constraint(self, prog, x_current, other_robot, sigma_x=0.1, sigma_y=0.1):
+		if(np.abs(x_current[0]-other_robot[0]<2*sigma_x) and np.abs(x_current[1]-other_robot[1]<2*sigma_y)):
+			pass
+		pass
 
 	def compute_mpc_feedback(self, x_current, x_r, u_r, T):
 		'''
