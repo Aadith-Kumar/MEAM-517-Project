@@ -31,11 +31,11 @@ class Robot(object):
 		self.Qf = Qf
 
 		# Input limits
-		self.umin = np.array([-0.22, -2.84])
-		self.umax = np.array([0.22, 2.84])
+		# self.umin = np.array([-0.26, -2.84])
+		# self.umax = np.array([0.26, 2.84])
 		
-		# self.umin = np.array([-0.26, -1.0])
-		# self.umax = np.array([0.26, 1.0])
+		self.umin = np.array([-0.26, -2.2])
+		self.umax = np.array([0.26, 2.2])
 
 
 		self.nx = 3 # x, y, theta
@@ -142,7 +142,7 @@ class Robot(object):
 		prog.AddQuadraticCost(xe[i,:] @ self.Qf @ xe[i,:].T)	
 
 
-	def add_collision_constraint(self, prog, x, x_current, other_x_current, alpha, p):
+	def add_collision_constraint(self, prog, x, x_current, other_x_current, dt):
 		D = (2*self.bot_radius) + self.epsilon
 		# dist = np.ones((x.shape[0], 1))*D
 		# zero_arr = np.zeros((x.shape[0],1))
@@ -159,14 +159,17 @@ class Robot(object):
 				temp1 = np.sum((other_pos - x[:,0:2])**2, axis = 1).reshape((-1,1))
 
 				# temp1 = np.linalg.norm((x[:,0:2] - other_pos), axis = 1).reshape((-1,1))
-				if(rob_dist < 1.5):
+				d_enforce = 1
+				if(rob_dist < d_enforce):
 					print("Hi there")
-					prog.AddLinearCost((2 - rob_dist)*500)
+					# prog.AddLinearCost((2.5*d_enforce - rob_dist)*2)
 
 					for j in range(temp1.shape[0]):
 						prog.AddConstraint(temp1[j,0] - D**2 >= 0)
 						# prog.AddCost(alpha * (p**(-temp1[j,0])))
 						# print(D, " ", temp1[j,0])
+					return 0.5
+				return dt
 
 
 	def compute_mpc_feedback(self, x_current, x_r, u_r, other_x_current, T):
@@ -189,9 +192,10 @@ class Robot(object):
 		# Add constraints and cost
 		self.add_initial_state_constraint(prog, x, x_current)
 		self.add_input_saturation_constraint(prog, x, u, N)
-		self.add_dynamics_constraint(prog, x, u, N, x_r, u_r, x_current, T)
+		# self.add_dynamics_constraint(prog, x, u, N, x_r, u_r, x_current, T)
 		self.add_cost(prog, x-x_r.reshape((1,self.nx)), u, N)
-		self.add_collision_constraint(prog, x, x_current, other_x_current, 50, 100)
+		T = self.add_collision_constraint(prog, x, x_current, other_x_current, T)
+		self.add_dynamics_constraint(prog, x, u, N, x_r, u_r, x_current, T)
 
 		# Solve the QP
 		# solver = OsqpSolver() 
@@ -201,6 +205,8 @@ class Robot(object):
 		u_mpc = np.zeros(2) # v and theta_dot
 
 		u_mpc = result.GetSolution(u)[0]
+		x_mpc = result.GetSolution(x)
+		print("Predicted states: ", x_mpc)
 		
 		return u_mpc
 
