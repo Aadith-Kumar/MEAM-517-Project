@@ -28,6 +28,7 @@ install(PROGRAMS
   src/single_mpc_control.py
   src/single_robot.py
   src/multi_robot_mpc.py
+  src/combined_mpc_solver.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
