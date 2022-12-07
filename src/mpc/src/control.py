@@ -172,6 +172,7 @@ def robot_mpc(robot):
     plt.plot(waypoints[:, 0], waypoints[: ,1], "rx", label="Waypoints")
     plt.legend()
     plt.savefig("path_noTheta.png")
+    plt.savefig("path_noTheta.png")
 
 def main(args):
 
@@ -201,44 +202,6 @@ def main(args):
     #                         [-2.  ,  0.15,  0.1488899583428],
     #                         [-3.  , -0.3 , -0.42285393]])
     waypoints = np.array( [ [ 0,  0,  0.        ],
-                            [ 0,  1,  3.14159265],
-                            [ 2,  1,  2.35619449],
-                            [ 3,  2,  2.35619449],
-                            [ 4,  1, -2.35619449],
-                            [ 5,  0, -2.35619449],
-                            [ 6,  1,  2.35619449],
-                            [ 6,  2,  1.57079633],
-                            [ 5,  3,  0.78539816],
-                            [ 5,  4,  1.57079633],
-                            [ 5,  5,  1.57079633]])
-
-    current_goal = waypoints[0]
-    current_waypoint_index = 0
-
-    robot_mpc(robot)
-
-def pseudo_main():
-    tf = 10000
-
-    dt = 0.1
-    goal_radius = 0.1
-
-    # Q = np.diag([5, 5, 0.01]);
-    # R = np.diag([0.1, 0.1]);
-    Q = np.diag([5, 5, 0.01]);
-    R = np.diag([0.1, 0.2]);
-    Qf = Q#np.diag([0.01, 0.01, 0]);
-    umin = np.array([-0.26, -1])
-    umax = np.array([0.26, 1])
-
-    robot = Robot(Q, R, Qf);
-    ur = np.zeros(robot.nu)
-
-    # waypoints = np.array([[0,0,0],
-    #                      [0,-1,-1.5708],
-    #                      [-2,0.15,0.5218],
-    #                      [-3,0.3,0.1489]])
-    waypoints = np.array( [ [ 0,  0,  0.        ],
                             [ 1,  0,  3.14159265],
                             [ 2,  1,  2.35619449],
                             [ 3,  2,  2.35619449],
@@ -249,7 +212,6 @@ def pseudo_main():
                             [ 5,  3,  0.78539816],
                             [ 5,  4,  1.57079633],
                             [ 5,  5,  1.57079633]])
-
     current_goal = waypoints[0]
     current_waypoint_index = 0
 
