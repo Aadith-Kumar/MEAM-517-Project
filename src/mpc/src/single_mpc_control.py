@@ -11,7 +11,7 @@ from scipy.spatial.transform import Rotation as R
 import numpy as np
 from math import sin, cos, pi
 from scipy.integrate import solve_ivp
-from robot import Robot
+from single_robot import Robot
 import matplotlib.pyplot as plt
 import time
 import sys
@@ -157,22 +157,31 @@ def initialze_ros(robot_count = 3):
 
 ######################################################################### MPC #########################################################################
 
+def get_all_current_posn(num_robots):
+    all_pos = []
+    for i in range(num_robots):
+        all_pos.append(get_robot_state(i+1))
 
-def robot_mpc(robot, robot_id ):
+    return all_pos.copy()
+
+def robot_mpc(robot, robot_id, num_robots):
   # TODO: Nice comment for function
   
-    dt = 0.15
+    dt = 0.1
     goal_radius = 0.1
 
     ur = np.zeros(robot.nu)
     x = [waypoints[0]]
+
     while not update_goal(goal_radius, robot_id):
 
 
         current_x = get_robot_state(robot_id) # x, y, theta
+        all_pos = get_all_current_posn(num_robots)
+
         xr = current_goal
 
-        current_u_command = robot.compute_mpc_feedback(current_x, xr, ur, dt)
+        current_u_command = robot.compute_mpc_feedback(current_x, xr, ur, all_pos, dt)
         #current_u_command = robot.compute_mpc_feedback(0, current_x, ur, dt)
         
         
@@ -196,7 +205,9 @@ def robot_mpc(robot, robot_id ):
         # Publish u
         ur = current_u_real
         publish_robot_command(current_u_real,robot_id)
-        time.sleep(dt)
+
+        ## check if sleep is required in multi-agent scenario
+        # time.sleep(0.1)
 
 
     current_u_command = np.zeros(2) # STOP AT GOAL
@@ -225,11 +236,13 @@ def main(args):
     robot_id = int(sys.argv[2]);
 
     initialze_ros(num_robots+1) # ROBOTS ARE INDEXED FROM 1
-    Q = np.diag([1.2, 1.2, 0])
-    R = np.diag([0.1, 0.15])
-    Qf = Q
+    Q = np.diag([5, 5, 0])
+    R = np.diag([0.5, 0.5])
+    Qf = Q*5
+    bot_radius = 0.15
+    epsilon = 0.2
 
-    robot = Robot(Q, R, Qf);
+    robot = Robot(Q, R, Qf, bot_radius, epsilon, robot_id);
 
     # TODO: get map
     
@@ -242,8 +255,12 @@ def main(args):
     #                         [ -1  , 0  , 0],
     #                         [-2.  ,  0.15,  0.1488899583428],
     #                         [-3.  , -0.3 , -0.42285393]])
-    waypoints = np.array( [ [ 0,  0,  0.        ],
-                            [ 0,  1,  3.14159265],
+    ls_waypoints = [np.array([[ 0,  -2,  0.   ],
+                            [ 2,  0,  3.14159265],
+                            [ 2,  1,  2.35619449],
+                            [ 3,  2,  2.35619449]]),
+                    np.array([[ -0.5,  0,  0.   ],
+                            [ 3,  0,  3.14159265],
                             [ 2,  1,  2.35619449],
                             [ 3,  2,  2.35619449],
                             [ 4,  1, -2.35619449],
@@ -252,11 +269,13 @@ def main(args):
                             [ 6,  2,  1.57079633],
                             [ 5,  3,  0.78539816],
                             [ 5,  4,  1.57079633],
-                            [ 5,  5,  1.57079633]])
+                            [ 5,  5,  1.57079633]])]
+
+    waypoints = ls_waypoints[robot_id-1]
     current_goal = waypoints[0]
     current_waypoint_index = 0
 
-    robot_mpc(robot,robot_id)
+    robot_mpc(robot, robot_id, num_robots)
 
 
 
