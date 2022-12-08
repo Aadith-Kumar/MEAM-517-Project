@@ -232,12 +232,13 @@ def robot_mpc(robot, robot_id, num_robots):
     current_u_command = np.zeros(2) # STOP AT GOAL
     publish_robot_command(current_u_command, robot_id)
 
-    x= np.array(x)
+    x = np.array(x)
     plt.plot(x[:, 0], x[:, 1], "b-", label="MPC path")
     plt.plot(waypoints[:, 0], waypoints[: ,1], "rx", label="Waypoints")
     plt.legend()
-    file_path = "path"+str(robot_id)+".png"
-    plt.savefig(file_path)
+    file_path = "graphs/path_"+str(robot_id)
+    plt.savefig(file_path+".png")
+    np.save(file_path+".npy", x)
 
 def main(args):
     # rclpy.init(args=args)
@@ -273,30 +274,16 @@ def main(args):
     for i in range(size):
         waypoints[i,:] = np.array([response.path[i].x, response.path[i].y, 0.0])
     print(waypoints)
+    file_path = "graphs/waypoints_"+str(robot_id)
+    plt.savefig(file_path+".png")
+    np.save(file_path+".npy", waypoints)
 
-
-    # TODO: Call astar service
-    # waypoints = np.array( [ [ 0.  ,  0.  ,  0.        ],
-    #                         [ -1  , 0  , 0],
-    #                         [-2.  ,  0.15,  0.1488899583428],
-    #                         [-3.  , -0.3 , -0.42285393]])
-    # ls_waypoints = [np.array([[ 0,  -2,  0.   ],
-    #                         [ 2,  0,  0],
-    #                         [ 2,  1,  2.35619449],
-    #                         [ 3,  2,  2.35619449]]),
-    #                 np.array([[ -0.5,  0,  0.   ],
-    #                         [ 3,  0,  0],
-    #                         [ 2,  -1,  2.35619449]])]
-
-    # waypoints = ls_waypoints[robot_id-1]
     current_goal = waypoints[0]
     current_waypoint_index = 0
 
     robot_mpc(robot, robot_id, num_robots)
     minimal_client.destroy_node()
     rclpy.shutdown()
-
-
 
 if __name__ == '__main__':
     main(1)
