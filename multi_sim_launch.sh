@@ -16,6 +16,6 @@ gazebo --verbose -s libgazebo_ros_factory.so &
 # done
 
 ros2 run robot_spawner_pkg spawn_turtlebot robot1 robot1 0.0 0.0 0.1;
-ros2 run robot_spawner_pkg spawn_turtlebot robot2 robot2 5.0 5.0 0.1;
+ros2 run robot_spawner_pkg spawn_turtlebot robot2 robot2 5.0 0.0 0.1;
 
 #ros2 run mpc sample_state_update_code.py
