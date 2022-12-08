@@ -19,6 +19,7 @@ import pydrake.symbolic as sym
 
 from pydrake.all import MonomialBasis, OddDegreeMonomialBasis, Variables
 
+x_other_robot = [];
 
 class Robot(object):
 	def __init__(self, Q, R, Qf, bot_radius, epsilon, robot_id):
@@ -139,8 +140,45 @@ class Robot(object):
 		for i in range(N-1):
 			prog.AddQuadraticCost(xe[i,:] @ self.Q @ xe[i,:].T)
 			prog.AddQuadraticCost(u[i,:] @ self.R @ u[i,:].T)
-		prog.AddQuadraticCost(xe[i,:] @ self.Qf @ xe[i,:].T)	
+		prog.AddQuadraticCost(xe[i,:] @ self.Qf @ xe[i,:].T)
+	
+	def collisionCostEvaluator(self, x, x_other):
+		dist = np.sum((x[:,0:2] - x_other[0:2].reshape((1,-1)))**2, axis = 1).reshape((-1,1))
+		check_dist = 1
+		cost = dist[0,0]*0
 
+		dist2 = dist**3
+		cost = 1/(100*dist2)
+		cost = np.sum(cost)
+
+		return cost
+
+	def add_collision_cost(self, prog, x, other_x):
+
+		n_r = x.shape[0]
+		n_c = x.shape[1]
+		num_bots = len(other_x)
+
+		for i in range(num_bots):
+
+			def collisionCostHelper(vars):
+				x = vars[:(n_r*n_c)].reshape((n_r, n_c))
+				global x_other_robot;
+				# x_other = vars[-3:,:]
+				return self.collisionCostEvaluator(x, x_other_robot)
+
+			if(i !=  self.robot_id):
+
+				vars = np.zeros((n_r*n_c,), dtype = 'object')
+
+				vars[:(n_r*n_c)] = x.reshape((-1,))
+				temp = other_x[i].astype('object')
+				# vars[-3:,:] = other_x[i].reshape((-1,1))
+				#vars[-3:] = temp
+				global x_other_robot;
+				x_other_robot = temp
+
+				prog.AddCost(collisionCostHelper, vars)
 
 	def add_collision_constraint(self, prog, x, x_current, other_x_current, dt):
 		D = (2*self.bot_radius) + self.epsilon
@@ -160,9 +198,10 @@ class Robot(object):
 
 				# temp1 = np.linalg.norm((x[:,0:2] - other_pos), axis = 1).reshape((-1,1))
 				d_enforce = 1
+				prog.AddCost((1/(700* (temp1[0,:])))[0] );
 				if(rob_dist < d_enforce):
 					print("Hi there")
-					# prog.AddLinearCost((2.5*d_enforce - rob_dist)*2)
+					#prog.AddLinearCost((50*d_enforce - rob_dist)**2)
 
 					for j in range(temp1.shape[0]):
 						prog.AddConstraint(temp1[j,0] - D**2 >= 0)
@@ -194,8 +233,9 @@ class Robot(object):
 		self.add_input_saturation_constraint(prog, x, u, N)
 		# self.add_dynamics_constraint(prog, x, u, N, x_r, u_r, x_current, T)
 		self.add_cost(prog, x-x_r.reshape((1,self.nx)), u, N)
-		T = self.add_collision_constraint(prog, x, x_current, other_x_current, T)
+		# T = self.add_collision_constraint(prog, x, x_current, other_x_current, T)
 		self.add_dynamics_constraint(prog, x, u, N, x_r, u_r, x_current, T)
+		self.add_collision_cost(prog, x, other_x_current)
 
 		# Solve the QP
 		# solver = OsqpSolver() 

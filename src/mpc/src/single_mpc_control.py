@@ -236,7 +236,8 @@ def robot_mpc(robot, robot_id, num_robots):
     plt.plot(x[:, 0], x[:, 1], "b-", label="MPC path")
     plt.plot(waypoints[:, 0], waypoints[: ,1], "rx", label="Waypoints")
     plt.legend()
-    plt.savefig("path.png")
+    file_path = "path"+str(robot_id)+".png"
+    plt.savefig(file_path)
 
 def main(args):
     # rclpy.init(args=args)
