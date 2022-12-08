@@ -4,7 +4,8 @@ from rclpy.node import Node
 import numpy as np
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseWithCovariance, Pose, Twist
+from geometry_msgs.msg import PoseWithCovariance, Pose, Twist, Point
+from meam517_interfaces.srv import Waypoints
 
 from scipy.spatial.transform import Rotation as R 
 
@@ -58,6 +59,24 @@ class CommandPublisher(Node):
         self.num = robot
         super().__init__('robot_command_publisher'+str(robot))
         self.publisher_ = self.create_publisher(Twist, "robot" + str(robot) + "/cmd_vel", 10)
+
+class ClientAsync(Node):
+
+    def __init__(self):
+        super().__init__('astar_python_client')
+        self.cli = self.create_client(Waypoints, 'find_path')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = Waypoints.Request()
+
+    def send_request(self, xs, ys, xg, yg):
+        self.req.start.x = xs
+        self.req.start.y = ys
+        self.req.end.x = xg
+        self.req.end.y = yg
+        self.future = self.cli.call_async(self.req)
+        rclpy.spin_until_future_complete(self, self.future)
+        return self.future.result()
 
 
 
@@ -220,16 +239,16 @@ def robot_mpc(robot, robot_id, num_robots):
     plt.savefig("path.png")
 
 def main(args):
-
+    # rclpy.init(args=args)
   
     global waypoints
     global current_goal
     global current_waypoint_index
     global num_robots
 
-    if(len(sys.argv) < 3):
-        print ("Please enter number of robots and this node robot id as arguments")
-        return;
+    if(len(sys.argv)!=5):
+        print ("Please enter number of robots, robot_id, goal_x, goal_y as node arguments")
+        return 0
 
 
     num_robots = int(sys.argv[1]);
@@ -244,30 +263,37 @@ def main(args):
 
     robot = Robot(Q, R, Qf, bot_radius, epsilon, robot_id);
 
-    # TODO: get map
-    
-    # Initial state
-    start = [(0, 0)]
-    goal  = [(5, 5)]
+    minimal_client = ClientAsync()
+    start_pos = get_robot_state(robot_id) 
+    print(int(start_pos[0]), int(start_pos[1]))
+    response = minimal_client.send_request(float(int(start_pos[0])), float(int(start_pos[1])), float(sys.argv[3]), float(sys.argv[4]))
+    size = len(response.path)
+    waypoints = np.zeros((size,3))
+    for i in range(size):
+        waypoints[i,:] = np.array([response.path[i].x, response.path[i].y, 0.0])
+    print(waypoints)
+
 
     # TODO: Call astar service
     # waypoints = np.array( [ [ 0.  ,  0.  ,  0.        ],
     #                         [ -1  , 0  , 0],
     #                         [-2.  ,  0.15,  0.1488899583428],
     #                         [-3.  , -0.3 , -0.42285393]])
-    ls_waypoints = [np.array([[ 0,  -2,  0.   ],
-                            [ 2,  0,  0],
-                            [ 2,  1,  2.35619449],
-                            [ 3,  2,  2.35619449]]),
-                    np.array([[ -0.5,  0,  0.   ],
-                            [ 3,  0,  0],
-                            [ 2,  -1,  2.35619449]])]
+    # ls_waypoints = [np.array([[ 0,  -2,  0.   ],
+    #                         [ 2,  0,  0],
+    #                         [ 2,  1,  2.35619449],
+    #                         [ 3,  2,  2.35619449]]),
+    #                 np.array([[ -0.5,  0,  0.   ],
+    #                         [ 3,  0,  0],
+    #                         [ 2,  -1,  2.35619449]])]
 
-    waypoints = ls_waypoints[robot_id-1]
+    # waypoints = ls_waypoints[robot_id-1]
     current_goal = waypoints[0]
     current_waypoint_index = 0
 
     robot_mpc(robot, robot_id, num_robots)
+    minimal_client.destroy_node()
+    rclpy.shutdown()
 
 
 

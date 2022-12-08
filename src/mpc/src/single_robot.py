@@ -205,8 +205,8 @@ class Robot(object):
 		u_mpc = np.zeros(2) # v and theta_dot
 
 		u_mpc = result.GetSolution(u)[0]
-		x_mpc = result.GetSolution(x)
-		print("Predicted states: ", x_mpc)
+		# x_mpc = result.GetSolution(x)
+		# print("Predicted states: ", x_mpc)
 		
 		return u_mpc
 

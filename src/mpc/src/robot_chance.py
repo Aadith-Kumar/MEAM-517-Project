@@ -20,7 +20,7 @@ from pydrake.all import MonomialBasis, OddDegreeMonomialBasis, Variables
 
 
 class Robot(object):
-	def __init__(self, Q, R, Qf):
+	def __init__(self, Q, R, Qf, bot_radius, epsilon, robot_id):
 		self.g = 9.81
 		self.m = 1
 		self.a = 0.25
@@ -30,15 +30,18 @@ class Robot(object):
 		self.Qf = Qf
 
 		# Input limits
-		self.umin = np.array([-0.26, -2.84])
-		self.umax = np.array([0.26, 2.84])
+		# self.umin = np.array([-0.26, -2.84])
+		# self.umax = np.array([0.26, 2.84])
 		
-		# self.umin = np.array([-0.26, -1.0])
-		# self.umax = np.array([0.26, 1.0])
+		self.umin = np.array([-0.26, -2.2])
+		self.umax = np.array([0.26, 2.2])
 
 
 		self.nx = 3 # x, y, theta
 		self.nu = 2 # v, theta dot(omega)
+		self.bot_radius = bot_radius
+		self.epsilon = epsilon
+		self.robot_id = robot_id - 1	# making it start from 0 index
 
 		# iLQR data
 
@@ -145,9 +148,14 @@ class Robot(object):
 		prog.AddLinearInequalityConstraint(np.linalg.norm(x_current[:-1] - obs_center)>inflate*obs_radius)
 	
 	def add_chance_constraint(self, prog, x_current, other_robot, sigma_x=0.1, sigma_y=0.1):
-		if(np.abs(x_current[0]-other_robot[0]<2*sigma_x) and np.abs(x_current[1]-other_robot[1]<2*sigma_y)):
-			pass
-		pass
+		
+		print("CHANCE CONSTRAINT")
+		for i in range(x_current.shape[0]):
+			rect_x = max(x_current[i, 0]+sigma_x,other_robot[0]+sigma_x) - min(x_current[i, 0]-sigma_x,other_robot[0]-sigma_x)
+			rect_y = max(x_current[i, 1]+sigma_y,other_robot[1]+sigma_y) - min(x_current[i, 1]-sigma_y,other_robot[1]-sigma_y)
+			A = rect_x*rect_y
+			print(A)
+			prog.AddConstraint(A<10)
 
 	def compute_mpc_feedback(self, x_current, x_r, u_r, T):
 		'''
@@ -183,7 +191,7 @@ class Robot(object):
 		
 		return u_mpc
 
-	def compute_chance_mpc_feedback(self, x_current, x_r, u_r, T):
+	def compute_chance_mpc_feedback(self, x_current, other_current, x_r, u_r, T):
 		'''
 		This function computes the MPC controller input u
 		'''
@@ -205,6 +213,8 @@ class Robot(object):
 		self.add_input_saturation_constraint(prog, x, u, N)
 		self.add_dynamics_constraint(prog, x, u, N, x_r, u_r, x_current, T)
 		self.add_cost(prog, x-x_r.reshape((1,self.nx)), u, N)
+		self.add_chance_constraint(prog, x, other_current, 0.1, 0.1)
+
 
 		# Solve the QP
 		# solver = OsqpSolver() 
