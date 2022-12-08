@@ -151,8 +151,8 @@ class Robot(object):
 		
 		print("CHANCE CONSTRAINT")
 		for i in range(x_current.shape[0]):
-			rect_x = max(x_current[i, 0]+sigma_x,other_robot[0]+sigma_x) - min(x_current[i, 0]-sigma_x,other_robot[0]-sigma_x)
-			rect_y = max(x_current[i, 1]+sigma_y,other_robot[1]+sigma_y) - min(x_current[i, 1]-sigma_y,other_robot[1]-sigma_y)
+			rect_x = max(x_current[i, 0]+sigma_x, other_robot[0]+sigma_x) - min(x_current[i, 0]-sigma_x, other_robot[0]-sigma_x)
+			rect_y = max(x_current[i, 1]+sigma_y, other_robot[1]+sigma_y) - min(x_current[i, 1]-sigma_y, other_robot[1]-sigma_y)
 			A = rect_x*rect_y
 			print(A)
 			prog.AddConstraint(A<10)
