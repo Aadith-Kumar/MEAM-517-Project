@@ -267,8 +267,7 @@ def main(args):
 
     minimal_client = ClientAsync()
     start_pos = get_robot_state(robot_id) 
-    print(int(start_pos[0]), int(start_pos[1]))
-    response = minimal_client.send_request(float(int(start_pos[0])), float(int(start_pos[1])), float(sys.argv[3]), float(sys.argv[4]))
+    response = minimal_client.send_request(round(start_pos[0], 0), round(start_pos[1], 0), float(sys.argv[3]), float(sys.argv[4]))
     size = len(response.path)
     waypoints = np.zeros((size,3))
     for i in range(size):
