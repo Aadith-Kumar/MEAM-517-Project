@@ -18,6 +18,7 @@ import pydrake.symbolic as sym
 
 from pydrake.all import MonomialBasis, OddDegreeMonomialBasis, Variables
 
+import pdb
 
 class Robot(object):
 	def __init__(self, Q, R, Qf, bot_radius, epsilon, robot_id):
@@ -151,11 +152,103 @@ class Robot(object):
 		
 		print("CHANCE CONSTRAINT")
 		for i in range(x_current.shape[0]):
-			rect_x = max(x_current[i, 0]+sigma_x, other_robot[0]+sigma_x) - min(x_current[i, 0]-sigma_x, other_robot[0]-sigma_x)
-			rect_y = max(x_current[i, 1]+sigma_y, other_robot[1]+sigma_y) - min(x_current[i, 1]-sigma_y, other_robot[1]-sigma_y)
+			rect_x = min(x_current[i, 0]+sigma_x, other_robot[0]+sigma_x) - max(x_current[i, 0]-sigma_x, other_robot[0]-sigma_x)
+			rect_y = min(x_current[i, 1]+sigma_y, other_robot[1]+sigma_y) - max(x_current[i, 1]-sigma_y, other_robot[1]-sigma_y)
 			A = rect_x*rect_y
 			print(A)
 			prog.AddConstraint(A<10)
+	
+	def chanceConstraintEvaluator(self, x, x_other):
+		# print("CHANCE CONSTRAINT EVALUATOR")
+		sigma_x = 0.2
+		sigma_y = 0.2
+		constraints = x[:,0]*0
+		for i in range(x.shape[0]):
+			if(np.abs(x[i,0]-x_other[0])<2*sigma_x and np.abs(x[i,1]-x_other[1])<2*sigma_y):
+				print("COLLISION")
+				rect_x = np.abs(min(x[i, 0]+sigma_x, x_other[0]+sigma_x) - max(x[i, 0]-sigma_x, x_other[0]-sigma_x))
+				rect_y = np.abs(min(x[i, 1]+sigma_y, x_other[1]+sigma_y) - max(x[i, 1]-sigma_y, x_other[1]-sigma_y))
+				A = rect_x*rect_y
+				constraints[i] = A
+
+		return constraints
+
+	def add_chance_constraint(self, prog, x, other_x):
+
+		n_r = x.shape[0]
+		n_c = x.shape[1]
+		num_bots = len(other_x)
+
+		for i in range(num_bots):
+
+			def chanceConstraintHelper(vars):
+				x = vars[:(n_r*n_c)].reshape((n_r, n_c))
+				sigma_x = vars[-2]
+				sigma_y = vars[-1]
+				global x_other_robot;
+				# x_other = vars[-3:,:]
+				return self.chanceConstraintEvaluator(x, x_other_robot)
+
+			if(i !=  self.robot_id):
+
+				vars = np.zeros((n_r*n_c,), dtype = 'object')
+
+				vars[:(n_r*n_c)] = x.reshape((-1,))
+				temp = other_x[i].astype('object')
+				# vars[-3:,:] = other_x[i].reshape((-1,1))
+				#vars[-3:] = temp
+				global x_other_robot;
+				x_other_robot = temp
+				sigma_x = 0.1
+				sigma_y = 0.1
+				A_constraint = np.ones(n_r)*0.02#(sigma_x*sigma_y)
+
+				prog.AddConstraint(chanceConstraintHelper,np.zeros(n_r), A_constraint, vars) #TODO: tune this constraint
+	
+	def chanceCostEvaluator(self, x, x_other):
+		# print("CHANCE CONSTRAINT EVALUATOR")
+		sigma_x = 0.25
+		sigma_y = 0.25
+		constraints = x[:,0]*0
+		for i in range(x.shape[0]):
+			if(np.abs(x[i,0]-x_other[0])<2*sigma_x and np.abs(x[i,1]-x_other[1])<2*sigma_y):
+				print("COLLISION")
+				rect_x = np.abs(min(x[i, 0]+sigma_x, x_other[0]+sigma_x) - max(x[i, 0]-sigma_x, x_other[0]-sigma_x))
+				rect_y = np.abs(min(x[i, 1]+sigma_y, x_other[1]+sigma_y) - max(x[i, 1]-sigma_y, x_other[1]-sigma_y))
+				A = rect_x*rect_y
+				# Area function to be minimized
+				constraints[i] = (A**4)*(10**7)
+
+		return np.sum(constraints)
+
+	def add_chance_cost(self, prog, x, other_x):
+
+		n_r = x.shape[0]
+		n_c = x.shape[1]
+		num_bots = len(other_x)
+
+		for i in range(num_bots):
+
+			def chanceCostHelper(vars):
+				x = vars[:(n_r*n_c)].reshape((n_r, n_c))
+				sigma_x = vars[-2]
+				sigma_y = vars[-1]
+				global x_other_robot;
+				# x_other = vars[-3:,:]
+				return self.chanceCostEvaluator(x, x_other_robot)
+
+			if(i !=  self.robot_id):
+
+				vars = np.zeros((n_r*n_c,), dtype = 'object')
+
+				vars[:(n_r*n_c)] = x.reshape((-1,))
+				temp = other_x[i].astype('object')
+				# vars[-3:,:] = other_x[i].reshape((-1,1))
+				#vars[-3:] = temp
+				global x_other_robot;
+				x_other_robot = temp
+
+				prog.AddCost(chanceCostHelper, vars) #TODO: tune this constraint
 
 	def compute_mpc_feedback(self, x_current, x_r, u_r, T):
 		'''
@@ -197,7 +290,7 @@ class Robot(object):
 		'''
 
 		# Parameters for the QP
-		N = 10
+		N = 20
 
 		# Initialize mathematical program and declare decision variables
 		prog = MathematicalProgram()
@@ -213,7 +306,8 @@ class Robot(object):
 		self.add_input_saturation_constraint(prog, x, u, N)
 		self.add_dynamics_constraint(prog, x, u, N, x_r, u_r, x_current, T)
 		self.add_cost(prog, x-x_r.reshape((1,self.nx)), u, N)
-		self.add_chance_constraint(prog, x, other_current, 0.1, 0.1)
+		# self.add_chance_constraint(prog, x, other_current)
+		self.add_chance_cost(prog, x, other_current)
 
 
 		# Solve the QP

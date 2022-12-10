@@ -204,7 +204,8 @@ def robot_mpc(robot, robot_id, num_robots):
   
     t0 = 0.0
 
-    dt = 0.15
+    # dt = 0.15
+    dt = 0.2
     goal_radius = 0.1
     ur = np.zeros(robot.nu)
     x = [waypoints[0]]
@@ -212,11 +213,9 @@ def robot_mpc(robot, robot_id, num_robots):
         current_x = get_robot_state(robot_id) # x, y, theta
 
         xr = current_goal
-        # TODO: Don't hardcode other robot ID
-        other_x = get_robot_state(1)
-        ####################################
-        # current_u_command = robot.compute_chance_mpc_feedback(current_x, other_x, xr, ur, dt)
-        current_u_command = robot.compute_mpc_feedback(current_x, xr, ur, dt)
+        other_x = get_all_current_posn(num_robots)
+        current_u_command = robot.compute_chance_mpc_feedback(current_x, other_x, xr, ur, dt)
+        # current_u_command = robot.compute_mpc_feedback(current_x, xr, ur, dt)
 
         print("MPC output: ", current_u_command)
         print("Current goal: ", current_goal)
@@ -245,11 +244,13 @@ def robot_mpc(robot, robot_id, num_robots):
     current_u_command = np.zeros(2) # STOP AT GOAL
     publish_robot_command(current_u_command, robot_id)
 
-    x= np.array(x)
+    x = np.array(x)
     plt.plot(x[:, 0], x[:, 1], "b-", label="MPC path")
     plt.plot(waypoints[:, 0], waypoints[: ,1], "rx", label="Waypoints")
     plt.legend()
-    plt.savefig("path.png")
+    file_path = "graphs/path_"+str(robot_id)
+    plt.savefig(file_path+".png")
+    np.save(file_path+".npy", x)
 
 def main(args):
 
@@ -267,7 +268,7 @@ def main(args):
 
     initialze_ros(num_robots+1) # ROBOTS ARE INDEXED FROM 1
     Q = np.diag([5, 5, 0])
-    R = np.diag([0.5, 0.5])
+    R = np.diag([0.5, 0.7])
     Qf = Q*2
     bot_radius = 0.15
     epsilon = 0.2
@@ -283,7 +284,9 @@ def main(args):
     for i in range(size):
         waypoints[i,:] = np.array([response.path[i].x, response.path[i].y, 0.0])
     print(waypoints)
-
+    file_path = "graphs/waypoints_"+str(robot_id)
+    np.save(file_path+".npy", waypoints)
+    # pdb.set_trace()
     current_goal = waypoints[0]
     current_waypoint_index = 0
 

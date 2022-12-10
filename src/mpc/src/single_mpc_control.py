@@ -274,7 +274,6 @@ def main(args):
         waypoints[i,:] = np.array([response.path[i].x, response.path[i].y, 0.0])
     print(waypoints)
     file_path = "graphs/waypoints_"+str(robot_id)
-    plt.savefig(file_path+".png")
     np.save(file_path+".npy", waypoints)
 
     current_goal = waypoints[0]

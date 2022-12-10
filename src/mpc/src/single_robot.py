@@ -180,35 +180,35 @@ class Robot(object):
 
 				prog.AddCost(collisionCostHelper, vars)
 
-	def add_collision_constraint(self, prog, x, x_current, other_x_current, dt):
-		D = (2*self.bot_radius) + self.epsilon
-		# dist = np.ones((x.shape[0], 1))*D
-		# zero_arr = np.zeros((x.shape[0],1))
-		for i in range(len(other_x_current)):
-			if(i != self.robot_id):
-				rob_dist = np.linalg.norm(x_current[:2] - other_x_current[i][:2])
-				print("Other bot pos : {} and rob_dist: {}".format(other_x_current[i], rob_dist))
-				other_pos = other_x_current[i][:2].reshape((1,-1))
-				# if(x_current[0] <= other_x_current[i][0]):
-				# 	temp1 = np.sum((other_pos - x[:,0:2])**2, axis = 1).reshape((-1,1))
-				# else:
-				# 	temp1 = np.sum((x[:,0:2] - other_pos)**2, axis = 1).reshape((-1,1))
+	# def add_collision_constraint(self, prog, x, x_current, other_x_current, dt):
+	# 	D = (2*self.bot_radius) + self.epsilon
+	# 	# dist = np.ones((x.shape[0], 1))*D
+	# 	# zero_arr = np.zeros((x.shape[0],1))
+	# 	for i in range(len(other_x_current)):
+	# 		if(i != self.robot_id):
+	# 			rob_dist = np.linalg.norm(x_current[:2] - other_x_current[i][:2])
+	# 			print("Other bot pos : {} and rob_dist: {}".format(other_x_current[i], rob_dist))
+	# 			other_pos = other_x_current[i][:2].reshape((1,-1))
+	# 			# if(x_current[0] <= other_x_current[i][0]):
+	# 			# 	temp1 = np.sum((other_pos - x[:,0:2])**2, axis = 1).reshape((-1,1))
+	# 			# else:
+	# 			# 	temp1 = np.sum((x[:,0:2] - other_pos)**2, axis = 1).reshape((-1,1))
 
-				temp1 = np.sum((other_pos - x[:,0:2])**2, axis = 1).reshape((-1,1))
+	# 			temp1 = np.sum((other_pos - x[:,0:2])**2, axis = 1).reshape((-1,1))
 
-				# temp1 = np.linalg.norm((x[:,0:2] - other_pos), axis = 1).reshape((-1,1))
-				d_enforce = 1
-				prog.AddCost((1/(700* (temp1[0,:])))[0] );
-				if(rob_dist < d_enforce):
-					print("Hi there")
-					#prog.AddLinearCost((50*d_enforce - rob_dist)**2)
+	# 			# temp1 = np.linalg.norm((x[:,0:2] - other_pos), axis = 1).reshape((-1,1))
+	# 			d_enforce = 1
+	# 			prog.AddCost((1/(700* (temp1[0,:])))[0] );
+	# 			if(rob_dist < d_enforce):
+	# 				print("Hi there")
+	# 				#prog.AddLinearCost((50*d_enforce - rob_dist)**2)
 
-					for j in range(temp1.shape[0]):
-						prog.AddConstraint(temp1[j,0] - D**2 >= 0)
-						# prog.AddCost(alpha * (p**(-temp1[j,0])))
-						# print(D, " ", temp1[j,0])
-					return 0.5
-				return dt
+	# 				for j in range(temp1.shape[0]):
+	# 					prog.AddConstraint(temp1[j,0] - D**2 >= 0)
+	# 					# prog.AddCost(alpha * (p**(-temp1[j,0])))
+	# 					# print(D, " ", temp1[j,0])
+	# 				return 0.5
+	# 			return dt
 
 
 	def compute_mpc_feedback(self, x_current, x_r, u_r, other_x_current, T):
