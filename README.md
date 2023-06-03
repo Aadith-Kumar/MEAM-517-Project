@@ -1,11 +1,22 @@
 
-## Multi-agent Planning using Chance Constrained Model Predictive Control
+## Chance Constrained Multi-Agent Non-linear MPC
 
-:link: [Google Drive](https://drive.google.com/drive/folders/12vvI-4S0ICZvCfdP6TQElmgLZ1OQ7fW2?usp=sharing)
+A non-linear Model Predictive Controller (MPC) for multi agent systems
+
+#### Chance-constrained
+Constraints on the probablilty of a collision between the robots. The probability of collision is directly proportional to the area of overlap of the uncertain robot regions.
+
+:link: [Poster](https://drive.google.com/file/d/1UIUwToIc4GugEmIqlzthz3QaQL_ka6ON/view?usp=sharing)
+
+:link: [Report](https://drive.google.com/file/d/1m9zmTFQniYrAPJRiMssyLQJa_hi_x13q/view?usp=sharing)
+
+:link: [Plots and Videos](https://drive.google.com/drive/folders/1IphhiGbgVlrLbb6JlH6qwuUXd3AbcMIj?usp=sharing)
 
 
+
+
+#### Instructions:
 Unzip the turtlebot3_simulation zip file and add it to the gitignore list. 
-
 
 
 So, to run the Gazebo Simulator, one path will need to be manually added.
@@ -29,23 +40,18 @@ There are four instances of hardcoded path, change them to reflect your path!
 It would be nice if we could get our Robot to take this model path in one location, but I don't know how it works
 
 
-
-Node: Guys,I have set up a git ignore file to ignore all the build/ , log/ and install/ folders as we would want to build them in our own system and do not want other build executables pushed to the git!
-
-
-
-build instructions:
+#### Build instructions:
 1. Navigate to root of the worksopace
 2. Run 
 
      `$ colcon build`
 
 
-To launch simulator with multiple turtlebots, Run:
+To launch simulator with multiple turtlebots:
 
 ```bash multi_sim_launch.sh <num_robots>```
 
-To Control robot with teleop:
+To control robot with teleop:
 
 ``` sh teleop.sh <robot number> ```
 
