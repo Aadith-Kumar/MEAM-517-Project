@@ -259,9 +259,9 @@ def main(args):
     global current_waypoint_index
     global num_robots
 
-    if(len(sys.argv)!=5):
-        print ("Please enter number of robots, robot_id, goal_x, goal_y as node arguments")
-        return 0
+    # if(len(sys.argv)!=5):
+    #     print ("Please enter number of robots, robot_id, goal_x, goal_y as node arguments")
+    #     return 0
 
     num_robots = int(sys.argv[1]);
     robot_id = int(sys.argv[2]);
@@ -275,15 +275,20 @@ def main(args):
 
     robot = Robot(Q, R, Qf, bot_radius, epsilon, robot_id);
 
-    minimal_client = ClientAsync()
-    start_pos = get_robot_state(robot_id) 
-    print(round(start_pos[0], 0), round(start_pos[1], 0))
-    response = minimal_client.send_request(round(start_pos[0], 0), round(start_pos[1], 0), float(sys.argv[3]), float(sys.argv[4]))
-    size = len(response.path)
-    waypoints = np.zeros((size,3))
-    for i in range(size):
-        waypoints[i,:] = np.array([response.path[i].x, response.path[i].y, 0.0])
-    print(waypoints)
+    # minimal_client = ClientAsync()
+    # start_pos = get_robot_state(robot_id) 
+    # print(round(start_pos[0], 0), round(start_pos[1], 0))
+    # response = minimal_client.send_request(round(start_pos[0], 0), round(start_pos[1], 0), float(sys.argv[3]), float(sys.argv[4]))
+    # size = len(response.path)
+    # waypoints = np.zeros((size,3))
+    # for i in range(size):
+    #     waypoints[i,:] = np.array([response.path[i].x, response.path[i].y, 0.0])
+    # print(waypoints)
+
+    ls_waypoints = [np.array([[0,0,0],[1,1,0], [2,2,0], [3,3,0], [4,4,0], [5,5,0]]),
+                    np.array([[5,0,0],[4,1,0], [3,2,0], [2,3,0], [1,4,0], [0,5,0]]),
+                    np.array([[2,0,0],[2.5,1,0], [2.5,2,0], [2.5,3,0], [2.5,4,0], [2.5,5,0]])]
+    waypoints = ls_waypoints[robot_id-1]
     file_path = "graphs/waypoints_"+str(robot_id)
     np.save(file_path+".npy", waypoints)
     # pdb.set_trace()
@@ -291,8 +296,8 @@ def main(args):
     current_waypoint_index = 0
 
     robot_mpc(robot, robot_id, num_robots)
-    minimal_client.destroy_node()
-    rclpy.shutdown()
+    # minimal_client.destroy_node()
+    # rclpy.shutdown()
 
 
 
